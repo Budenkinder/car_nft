@@ -2,7 +2,9 @@
 node_modules/
 
 # Build output
-build/
+
+# commenting build otherwise vercel is not recognising the build folder 
+# build/
 dist/
 
 # Logs
