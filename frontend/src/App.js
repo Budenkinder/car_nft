@@ -1,4 +1,39 @@
 import React, { useState } from "react";
+import {
+  ThemeProvider,
+  createTheme,
+  CssBaseline,
+  AppBar,
+  Toolbar,
+  Typography,
+  Container,
+  TextField,
+  Button,
+  Box,
+  Paper,
+  Stack,
+} from "@mui/material";
+
+const theme = createTheme({
+  palette: {
+    mode: "light",
+    primary: {
+      main: "#6750A4",
+    },
+    secondary: {
+      main: "#625B71",
+    },
+    background: {
+      default: "#FFFBFE",
+    },
+  },
+  typography: {
+    fontFamily: "Roboto, sans-serif",
+    h6: {
+      fontWeight: 600,
+    },
+  },
+});
 
 function App() {
   const [carId, setCarId] = useState("");
@@ -14,7 +49,9 @@ function App() {
   const connectWallet = async () => {
     if (window.ethereum) {
       try {
-        const accounts = await window.ethereum.request({ method: 'eth_requestAccounts' });
+        const accounts = await window.ethereum.request({
+          method: "eth_requestAccounts",
+        });
         setWalletAddress(accounts[0]);
         console.log("Connected account:", accounts[0]);
       } catch (err) {
@@ -27,34 +64,109 @@ function App() {
 
   const handleSubmit = () => {
     console.log("Submitting repair record:", {
-      carId, make, model, year, vin, issue, shop
+      carId,
+      make,
+      model,
+      year,
+      vin,
+      issue,
+      shop,
     });
   };
 
   return (
-    <div style={{ padding: 20 }}>
-      <h1>Car Repair NFT</h1>
-      <button onClick={connectWallet}>Connect Wallet</button>
-      {walletAddress && <p>Connected: {walletAddress}</p>}
-      <div>
-        <input placeholder="Car ID" value={carId} onChange={e => setCarId(e.target.value)} />
-        <input placeholder="Make" value={make} onChange={e => setMake(e.target.value)} />
-        <input placeholder="Model" value={model} onChange={e => setModel(e.target.value)} />
-        <input placeholder="Year" value={year} onChange={e => setYear(e.target.value)} />
-        <input placeholder="VIN" value={vin} onChange={e => setVin(e.target.value)} />
-        <input placeholder="Issue Fixed" value={issue} onChange={e => setIssue(e.target.value)} />
-        <input placeholder="Repair Shop" value={shop} onChange={e => setShop(e.target.value)} />
-        <button onClick={handleSubmit}>Submit Repair</button>
-      </div>
-      {txHash && (
-        <p>
-          Transaction sent:{" "}
-          <a href={`https://sepolia.etherscan.io/tx/${txHash}`} target="_blank" rel="noreferrer">
-            {txHash}
-          </a>
-        </p>
-      )}
-    </div>
+    <ThemeProvider theme={theme}>
+      <CssBaseline />
+      <AppBar position="static" color="primary" elevation={1}>
+        <Toolbar>
+          <Typography variant="h6" sx={{ flexGrow: 1 }}>
+            Car Repair NFT
+          </Typography>
+          <Button variant="outlined" color="inherit" onClick={connectWallet}>
+            {walletAddress ? "Wallet Connected" : "Connect Wallet"}
+          </Button>
+        </Toolbar>
+      </AppBar>
+
+      <Container maxWidth="sm" sx={{ mt: 4 }}>
+        <Paper elevation={2} sx={{ p: 3 }}>
+          <Typography variant="h5" gutterBottom>
+            Register Repair
+          </Typography>
+          <Stack spacing={2}>
+            <TextField
+              label="Car ID"
+              fullWidth
+              value={carId}
+              onChange={(e) => setCarId(e.target.value)}
+            />
+            <TextField
+              label="Make"
+              fullWidth
+              value={make}
+              onChange={(e) => setMake(e.target.value)}
+            />
+            <TextField
+              label="Model"
+              fullWidth
+              value={model}
+              onChange={(e) => setModel(e.target.value)}
+            />
+            <TextField
+              label="Year"
+              fullWidth
+              value={year}
+              onChange={(e) => setYear(e.target.value)}
+            />
+            <TextField
+              label="VIN"
+              fullWidth
+              value={vin}
+              onChange={(e) => setVin(e.target.value)}
+            />
+            <TextField
+              label="Issue Fixed"
+              fullWidth
+              value={issue}
+              onChange={(e) => setIssue(e.target.value)}
+            />
+            <TextField
+              label="Repair Shop"
+              fullWidth
+              value={shop}
+              onChange={(e) => setShop(e.target.value)}
+            />
+
+            <Button variant="contained" color="primary" onClick={handleSubmit}>
+              Submit Repair
+            </Button>
+          </Stack>
+
+          {txHash && (
+            <Box mt={2}>
+              <Typography variant="body2">
+                Transaction sent:{" "}
+                <a
+                  href={`https://sepolia.etherscan.io/tx/${txHash}`}
+                  target="_blank"
+                  rel="noreferrer"
+                >
+                  {txHash}
+                </a>
+              </Typography>
+            </Box>
+          )}
+
+          {walletAddress && (
+            <Box mt={2}>
+              <Typography variant="body2" color="text.secondary">
+                Connected: {walletAddress}
+              </Typography>
+            </Box>
+          )}
+        </Paper>
+      </Container>
+    </ThemeProvider>
   );
 }
 

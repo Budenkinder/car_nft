@@ -3,6 +3,10 @@
   "version": "1.0.0",
   "private": true,
   "dependencies": {
+    "@emotion/react": "^11.11.1",
+    "@emotion/styled": "^11.11.0",
+    "@mui/material": "^5.16.4",
+    "@mui/icons-material": "^5.15.0",
     "ethers": "^5.7.2",
     "react": "^18.2.0",
     "react-dom": "^18.2.0",
@@ -13,7 +17,8 @@
     "build": "react-scripts build",
     "test": "react-scripts test",
     "eject": "react-scripts eject",
-    "clean": "rm -rf build && rm -rf node_modules && npm install"
+    "clean": "rm -rf build && rm -rf node_modules && npm install",
+    "fix-install": "npm cache clean --force && rm -rf node_modules package-lock.json && npm install"
   },
   "browserslist": {
     "production": [
