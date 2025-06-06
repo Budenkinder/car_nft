@@ -7,12 +7,13 @@ const MetaMaskLogin = ({
   onConnect, 
   onDisconnect, 
   buttonText = "Connect MetaMask",
-  requiredChainId = "0x10xaa36a7" // Sepolia Testnet by default
-}) => {
+  requiredChainId = "0x10xaa36a7"}) => {
   const [walletAddress, setWalletAddress] = useState('');
   const [error, setError] = useState('');
   const [isLoading, setIsLoading] = useState(false);
   const [chainId, setChainId] = useState(null);
+
+
 
   // Check for existing connection on component mount
   useEffect(() => {
@@ -135,9 +136,12 @@ const MetaMaskLogin = ({
   };
 
   const disconnectWallet = () => {
-    // Note: MetaMask doesn't support programmatic disconnect
-    // We can only clear our state
-    handleDisconnect();
+    setWalletAddress('');
+    setChainId(null);
+    setError('');
+    if (onDisconnect) {
+      onDisconnect();
+    }
   };
 
   return (
@@ -177,15 +181,6 @@ const MetaMaskLogin = ({
               Wrong network. Click to switch.
             </Typography>
           )}
-          <Button 
-            variant="outlined" 
-            color="secondary" 
-            onClick={disconnectWallet}
-            sx={{ mt: 1 }}
-            size="small"
-          >
-            Disconnect
-          </Button>
         </Box>
       )}
     </Box>
