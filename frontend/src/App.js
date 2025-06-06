@@ -13,6 +13,7 @@ import {
   Paper,
   Stack,
 } from "@mui/material";
+import MetaMaskLogin from "./components/MetaMaskLogin";
 
 const theme = createTheme({
   palette: {
@@ -46,20 +47,13 @@ function App() {
   const [txHash, setTxHash] = useState("");
   const [walletAddress, setWalletAddress] = useState("");
 
-  const connectWallet = async () => {
-    if (window.ethereum) {
-      try {
-        const accounts = await window.ethereum.request({
-          method: "eth_requestAccounts",
-        });
-        setWalletAddress(accounts[0]);
-        console.log("Connected account:", accounts[0]);
-      } catch (err) {
-        console.error("User rejected wallet connection", err);
-      }
-    } else {
-      alert("MetaMask not detected. Please install it.");
-    }
+  const handleConnect = (address, chainId) => {
+    setWalletAddress(address);
+    console.log("Connected to chain:", chainId);
+  };
+
+  const handleDisconnect = () => {
+    setWalletAddress("");
   };
 
   const handleSubmit = () => {
@@ -82,9 +76,12 @@ function App() {
           <Typography variant="h6" sx={{ flexGrow: 1 }}>
             Car Repair NFT
           </Typography>
-          <Button variant="outlined" color="inherit" onClick={connectWallet}>
-            {walletAddress ? "Wallet Connected" : "Connect Wallet"}
-          </Button>
+          <MetaMaskLogin
+            onConnect={handleConnect}
+            onDisconnect={handleDisconnect}
+            buttonText="Connect Wallet"
+            requiredChainId="0x5" // Goerli testnet - adjust as needed
+          />
         </Toolbar>
       </AppBar>
 
@@ -137,7 +134,12 @@ function App() {
               onChange={(e) => setShop(e.target.value)}
             />
 
-            <Button variant="contained" color="primary" onClick={handleSubmit}>
+            <Button
+              variant="contained"
+              color="primary"
+              onClick={handleSubmit}
+              disabled={!walletAddress}
+            >
               Submit Repair
             </Button>
           </Stack>
@@ -153,14 +155,6 @@ function App() {
                 >
                   {txHash}
                 </a>
-              </Typography>
-            </Box>
-          )}
-
-          {walletAddress && (
-            <Box mt={2}>
-              <Typography variant="body2" color="text.secondary">
-                Connected: {walletAddress}
               </Typography>
             </Box>
           )}
