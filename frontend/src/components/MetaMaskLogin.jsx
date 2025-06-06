@@ -7,7 +7,7 @@ const MetaMaskLogin = ({
   onConnect, 
   onDisconnect, 
   buttonText = "Connect MetaMask",
-  requiredChainId = "0x10xaa36a7"}) => {
+  requiredChainId = "0xaa36a7"}) => {
   const [walletAddress, setWalletAddress] = useState('');
   const [error, setError] = useState('');
   const [isLoading, setIsLoading] = useState(false);
