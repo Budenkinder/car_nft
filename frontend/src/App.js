@@ -78,9 +78,8 @@ function App() {
           </Typography>
           <MetaMaskLogin
             onConnect={handleConnect}
-            onDisconnect={handleDisconnect}
             buttonText="Connect Wallet"
-            requiredChainId="0xaa36a7" // Goerli testnet - adjust as needed
+            requiredChainId="0xaa36a7"
           />
         </Toolbar>
       </AppBar>

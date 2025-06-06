@@ -5,9 +5,9 @@ import PropTypes from 'prop-types';
 
 const MetaMaskLogin = ({ 
   onConnect, 
-  onDisconnect, 
-  buttonText = "Connect MetaMask",
-  requiredChainId = "0xaa36a7"}) => {
+  buttonText = "Connect MetaMask to Sepolia",
+  requiredChainId = "0xaa36a7"
+}) => {
   const [walletAddress, setWalletAddress] = useState('');
   const [error, setError] = useState('');
   const [isLoading, setIsLoading] = useState(false);
@@ -37,22 +37,18 @@ const MetaMaskLogin = ({
     
     checkConnection();
     
-    // Set up event listeners
     if (window.ethereum) {
       window.ethereum.on('accountsChanged', handleAccountsChanged);
       window.ethereum.on('chainChanged', handleChainChanged);
-      window.ethereum.on('disconnect', handleDisconnect);
     }
     
-    // Clean up listeners
     return () => {
       if (window.ethereum) {
         window.ethereum.removeListener('accountsChanged', handleAccountsChanged);
         window.ethereum.removeListener('chainChanged', handleChainChanged);
-        window.ethereum.removeListener('disconnect', handleDisconnect);
       }
     };
-  }, [onConnect, onDisconnect]);
+  }, [onConnect]);
 
   const handleAccountsChanged = (accounts) => {
     if (accounts.length === 0) {
@@ -148,16 +144,12 @@ const MetaMaskLogin = ({
   <Box sx={{ mb: 3 }}>
     <Button
       variant="contained"
-      color={walletAddress ? 'secondary' : 'primary'}
-      onClick={walletAddress ? disconnectWallet : connectWallet}
-      disabled={isLoading}
+      color="primary"
+      onClick={!walletAddress ? connectWallet : undefined}
+      disabled={isLoading || walletAddress}
       startIcon={isLoading ? <CircularProgress size={20} color="inherit" /> : null}
     >
-      {isLoading
-        ? 'Connecting...'
-        : walletAddress
-        ? 'Disconnect'
-        : buttonText}
+      {isLoading ? 'Connecting...' : walletAddress ? 'Connected' : buttonText}
     </Button>
 
     {walletAddress && (
@@ -191,7 +183,6 @@ const MetaMaskLogin = ({
 
 MetaMaskLogin.propTypes = {
   onConnect: PropTypes.func,
-  onDisconnect: PropTypes.func,
   buttonText: PropTypes.string,
   requiredChainId: PropTypes.string
 };
