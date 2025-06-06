@@ -145,46 +145,48 @@ const MetaMaskLogin = ({
   };
 
   return (
-    <Box sx={{ mb: 3 }}>
-      {!walletAddress ? (
-        <>
-          <Button 
-            variant="contained" 
-            color="primary" 
-            onClick={connectWallet}
-            disabled={isLoading}
-            startIcon={isLoading ? <CircularProgress size={20} color="inherit" /> : null}
-          >
-            {isLoading ? 'Connecting...' : buttonText}
-          </Button>
-          {error && (
-            <Typography 
-              color="error" 
-              sx={{ mt: 1, cursor: error.includes('switch') ? 'pointer' : 'default' }}
-              onClick={error.includes('switch') ? switchNetwork : null}
-            >
-              {error}
-            </Typography>
-          )}
-        </>
-      ) : (
-        <Box sx={{ display: 'flex', flexDirection: 'column', alignItems: 'flex-start' }}>
-          <Typography>
-            Connected: {walletAddress.substring(0, 6)}...{walletAddress.substring(walletAddress.length - 4)}
-          </Typography>
-          {chainId !== requiredChainId && (
-            <Typography 
-              color="warning.main" 
-              sx={{ mt: 1, cursor: 'pointer' }}
-              onClick={switchNetwork}
-            >
-              Wrong network. Click to switch.
-            </Typography>
-          )}
-        </Box>
-      )}
-    </Box>
-  );
+  <Box sx={{ mb: 3 }}>
+    <Button
+      variant="contained"
+      color={walletAddress ? 'secondary' : 'primary'}
+      onClick={walletAddress ? disconnectWallet : connectWallet}
+      disabled={isLoading}
+      startIcon={isLoading ? <CircularProgress size={20} color="inherit" /> : null}
+    >
+      {isLoading
+        ? 'Connecting...'
+        : walletAddress
+        ? 'Disconnect'
+        : buttonText}
+    </Button>
+
+    {walletAddress && (
+      <Typography sx={{ mt: 1 }}>
+        Connected: {walletAddress.substring(0, 6)}...{walletAddress.substring(walletAddress.length - 4)}
+      </Typography>
+    )}
+
+    {chainId !== requiredChainId && walletAddress && (
+      <Typography
+        color="warning.main"
+        sx={{ mt: 1, cursor: 'pointer' }}
+        onClick={switchNetwork}
+      >
+        Wrong network. Click to switch.
+      </Typography>
+    )}
+
+    {error && (
+      <Typography
+        color="error"
+        sx={{ mt: 1, cursor: error.includes('switch') ? 'pointer' : 'default' }}
+        onClick={error.includes('switch') ? switchNetwork : null}
+      >
+        {error}
+      </Typography>
+    )}
+  </Box>
+);
 };
 
 MetaMaskLogin.propTypes = {
