@@ -149,7 +149,7 @@ const MetaMaskLogin = ({
       disabled={isLoading || walletAddress}
       startIcon={isLoading ? <CircularProgress size={20} color="inherit" /> : null}
     >
-      {isLoading ? 'Connecting...' : walletAddress ? 'Connected' : buttonText}
+      {isLoading ? 'Connecting...' : walletAddress ? 'Connected to MetaMaSK' : buttonText}
     </Button>
 
     {walletAddress && (
