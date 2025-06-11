@@ -52,10 +52,6 @@ function App() {
     console.log("Connected to chain:", chainId);
   };
 
-  const handleDisconnect = () => {
-    setWalletAddress("");
-  };
-
   const handleSubmit = () => {
     console.log("Submitting repair record:", {
       carId,

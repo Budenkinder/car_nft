@@ -53,7 +53,8 @@ const MetaMaskLogin = ({
   const handleAccountsChanged = (accounts) => {
     if (accounts.length === 0) {
       // User disconnected
-      handleDisconnect();
+      setWalletAddress('');
+      setChainId(null);
     } else {
       // User switched accounts
       setWalletAddress(accounts[0]);
@@ -65,15 +66,17 @@ const MetaMaskLogin = ({
 
   const handleChainChanged = (newChainId) => {
     setChainId(newChainId);
-    // Force page refresh as recommended by MetaMask
-    window.location.reload();
-  };
-
-  const handleDisconnect = () => {
-    setWalletAddress('');
-    setChainId(null);
-    if (onDisconnect) {
-      onDisconnect();
+    
+    // Check if the new chain matches required chain
+    if (newChainId !== requiredChainId) {
+      setError(`Wrong network detected. Click to switch.`);
+    } else {
+      setError('');
+    }
+    
+    // Update connection with new chain
+    if (walletAddress && onConnect) {
+      onConnect(walletAddress, newChainId);
     }
   };
 
@@ -128,15 +131,6 @@ const MetaMaskLogin = ({
       console.error(err);
     } finally {
       setIsLoading(false);
-    }
-  };
-
-  const disconnectWallet = () => {
-    setWalletAddress('');
-    setChainId(null);
-    setError('');
-    if (onDisconnect) {
-      onDisconnect();
     }
   };
 
