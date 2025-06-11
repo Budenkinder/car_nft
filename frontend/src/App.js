@@ -38,7 +38,7 @@ const theme = createTheme({
 });
 
 function App() {
-  const [vin, setVin] = useState("");
+  const [vin, setVin] = useState("WBADT43483G473829");
   const [make, setMake] = useState("");
   const [model, setModel] = useState("");
   const [year, setYear] = useState("");
