@@ -39,7 +39,7 @@ const theme = createTheme({
 
 function App() {
   const [vin, setVin] = useState("WBADT43483G473829");
-  const [make, setMake] = useState("");
+  const [brand, setBrand] = useState("");
   const [model, setModel] = useState("");
   const [year, setYear] = useState("");
   const [issue, setIssue] = useState("");
@@ -60,7 +60,7 @@ function App() {
 
     // Validate all required fields
     if (!vin) newErrors.vin = "VIN is required";
-    if (!make) newErrors.make = "Make is required";
+    if (!brand) newErrors.brand = "Brand is required";
     if (!model) newErrors.model = "Model is required";
     if (!year) newErrors.year = "Year is required";
     if (!issue) newErrors.issue = "Issue description is required";
@@ -105,7 +105,7 @@ function App() {
 
       console.log("Submitting repair record:", {
         vin,
-        make,
+        brand,
         model,
         year,
         issue,
@@ -148,12 +148,12 @@ function App() {
               }
             />
             <TextField
-              label="Make"
+              label="Brand"
               fullWidth
-              value={make}
-              onChange={(e) => setMake(e.target.value)}
-              error={!!errors.make}
-              helperText={errors.make}
+              value={brand}
+              onChange={(e) => setBrand(e.target.value)}
+              error={!!errors.brand}
+              helperText={errors.brand}
             />
             <TextField
               label="Model"
