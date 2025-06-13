@@ -1,4 +1,6 @@
 import React, { useState } from "react";
+import { handleNFTCreation } from "./utils/pinata_ipfs_nft_service";
+
 import {
   ThemeProvider,
   createTheme,
@@ -44,6 +46,7 @@ function App() {
   const [year, setYear] = useState("");
   const [issue, setIssue] = useState("");
   const [shop, setShop] = useState("");
+  const [mileage, setMileage] = useState("");
   const [txHash, setTxHash] = useState("");
   const [walletAddress, setWalletAddress] = useState("");
   const [errors, setErrors] = useState({});
@@ -54,7 +57,19 @@ function App() {
     console.log("Connected to chain:", chainId);
   };
 
-  const handleSubmit = () => {
+  const handleSubmit = async (event) => {
+    event.preventDefault();
+
+    const carData = {
+      vinNumber: vin,
+      carBrand: brand,
+      carModel: model,
+      carYear: year,
+      issueDescription: issue,
+      repairShop: shop,
+      mileage: mileage,
+    };
+
     // Reset errors
     const newErrors = {};
 
@@ -65,6 +80,7 @@ function App() {
     if (!year) newErrors.year = "Year is required";
     if (!issue) newErrors.issue = "Issue description is required";
     if (!shop) newErrors.shop = "Repair shop is required";
+    if (!mileage) newErrors.mileage = "Mileage is required";
 
     // Check if vin is a valid VIN (17 characters, alphanumeric except I,O,Q)
     const vinRegex = /^[A-HJ-NPR-Z0-9]{17}$/;
@@ -83,6 +99,11 @@ function App() {
       newErrors.year = "Please enter a valid year";
     }
 
+    const mileageNum = parseInt(mileage);
+    if (mileage && (isNaN(mileageNum) || mileageNum < 0)) {
+      newErrors.mileage = "Please enter a valid Km.";
+    }
+
     // Update error state
     setErrors(newErrors);
 
@@ -91,6 +112,16 @@ function App() {
 
     // Show loading state
     setIsSubmitting(true);
+
+    const result = await handleNFTCreation(carData, vin);
+
+    if (result.success) {
+      // Handle success - maybe show a success message
+      console.log(`IPFS Hash: ${result.ipfsHash}`);
+    } else {
+      // Handle error
+      console.error(result.message);
+    }
 
     // Simulate blockchain transaction
     setTimeout(() => {
@@ -110,6 +141,7 @@ function App() {
         year,
         issue,
         shop,
+        mileage,
         txHash: mockTxHash,
       });
     }, 2000);
@@ -186,6 +218,14 @@ function App() {
               onChange={(e) => setShop(e.target.value)}
               error={!!errors.shop}
               helperText={errors.shop}
+            />
+            <TextField
+              label="Mileage in Km"
+              fullWidth
+              value={mileage}
+              onChange={(e) => setMileage(e.target.value)}
+              error={!!errors.mileage}
+              helperText={errors.mileage}
             />
 
             <Button
