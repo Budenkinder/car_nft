@@ -183,26 +183,6 @@ function App() {
         </Toolbar>
       </AppBar>
 
-      <Container maxWidth="sm" sx={{ mt: 4 }} disabled={!walletAddress}>
-        <Paper elevation={2} sx={{ p: 3 }}>
-          <Typography variant="h5" gutterBottom>
-            Earn car tokens by providing proofed repair records.
-          </Typography>
-          <Stack spacing={2}>
-            <TextField
-              label="Enter the VIN and get the repair records."
-              fullWidth
-              value={vin}
-              onChange={(e) => setVin(e.target.value)}
-              error={!!errors.vin}
-              helperText={
-                errors.vin || "Vehicle Identification Number (17 characters)"
-              }
-            />
-          </Stack>
-        </Paper>
-      </Container>
-
       <Container maxWidth="sm" sx={{ mt: 4 }}>
         <Paper elevation={2} sx={{ p: 3 }}>
           <Typography variant="h5" gutterBottom>
