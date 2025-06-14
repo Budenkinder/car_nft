@@ -111,11 +111,11 @@ function App() {
 
     // Validate all car data
     const validation = validateCarData({
-      vin: formData.vin,
-      make: formData.make,
-      model: formData.model,
-      year: formData.year,
-      mileage: formData.mileage,
+      vin: carData.vin,
+      make: carData.make,
+      model: carData.model,
+      year: carData.year,
+      mileage: carData.mileage,
     });
 
     if (!validation.isValid) {
