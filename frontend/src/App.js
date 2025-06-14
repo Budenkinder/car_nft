@@ -53,7 +53,7 @@ function App() {
   const [errors, setErrors] = useState({});
   const [isSubmitting, setIsSubmitting] = useState(false);
 
-  const handleConnect = (address, chainId) => {
+  const connectToMetaMask = (address, chainId) => {
     setWalletAddress(address);
     console.log("Connected to chain:", chainId);
   };
@@ -150,7 +150,7 @@ function App() {
             Car Repair NFT
           </Typography>
           <MetaMaskLogin
-            onConnect={handleConnect}
+            onConnect={connectToMetaMask}
             buttonText="Connect Wallet"
             requiredChainId="0xaa36a7" // Sepolia testnet
           />
