@@ -1,6 +1,13 @@
 import React, { useState } from "react";
-import { handleNFTCreation } from "./utils/pinata_ipfs_nft_service";
+import {
+  getCidFromContract,
+  handleNFTCreation,
+} from "./utils/pinata_ipfs_nft_service";
 import { isValidVIN, validateCarData } from "./utils/validation";
+import Web3 from "web3";
+import { fetchNFTMetadata } from "./utils/pinata_ipfs_nft_service";
+
+const CONTRACT_ABI = [];
 
 import {
   ThemeProvider,
@@ -52,10 +59,28 @@ function App() {
   const [walletAddress, setWalletAddress] = useState("");
   const [errors, setErrors] = useState({});
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [vinLastCid, setVinLastCid] = useState("");
 
   const connectToMetaMask = (address, chainId) => {
     setWalletAddress(address);
     console.log("Connected to chain:", chainId);
+    console.log(
+      "triggering Smart Contract to fetch vinLastCid, contract address: ",
+      `${process.env.REACT_APP_SMART_CONTRACT_ADDRESS}`
+    );
+
+    getCidFromContract(
+      vin,
+      `${process.env.REACT_APP_SMART_CONTRACT_ADDRESS}`,
+      CONTRACT_ABI
+    )
+      .then((cid) => {
+        setVinLastCid(cid);
+        console.log("CID from contract:", cid);
+      })
+      .catch((error) => {
+        console.error("Error fetching CID from contract:", error);
+      });
   };
 
   const handleSubmit = async (event) => {

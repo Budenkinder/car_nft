@@ -2,6 +2,12 @@ import { isValidCID, validateCarData } from "../utils/validation";
 
 const PINATA_API_URL = `${process.env.REACT_APP_PINATA_API_URL}`;
 
+export const getCidFromContract = async (vin, contractAddress, abi) => {
+  const web3 = new Web3(window.ethereum);
+  const contract = new web3.eth.Contract(abi, contractAddress);
+  return await contract.methods.getCidByVin(vin).call();
+};
+
 // the token uri is the IPFS hash of the metadata
 // That CID becomes accessible at:
 // ipfs://QmABC123... (native IPFS link)
