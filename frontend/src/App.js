@@ -1,5 +1,6 @@
 import React, { useState } from "react";
 import { handleNFTCreation } from "./utils/pinata_ipfs_nft_service";
+import { isValidVIN, validateCarData } from "./utils/validation";
 
 import {
   ThemeProvider,
@@ -82,26 +83,17 @@ function App() {
     if (!shop) newErrors.shop = "Repair shop is required";
     if (!mileage) newErrors.mileage = "Mileage is required";
 
-    // Check if vin is a valid VIN (17 characters, alphanumeric except I,O,Q)
-    const vinRegex = /^[A-HJ-NPR-Z0-9]{17}$/;
-    if (vin && !vinRegex.test(vin)) {
-      newErrors.vin = "Please enter a valid VIN (17 characters, no I, O, or Q)";
-    }
+    // Validate all car data
+    const validation = validateCarData({
+      vin: formData.vin,
+      make: formData.make,
+      model: formData.model,
+      year: formData.year,
+      mileage: formData.mileage,
+    });
 
-    // Validate year (4 digits, reasonable range)
-    const yearNum = parseInt(year);
-    if (
-      year &&
-      (isNaN(yearNum) ||
-        yearNum < 1900 ||
-        yearNum > new Date().getFullYear() + 1)
-    ) {
-      newErrors.year = "Please enter a valid year";
-    }
-
-    const mileageNum = parseInt(mileage);
-    if (mileage && (isNaN(mileageNum) || mileageNum < 0)) {
-      newErrors.mileage = "Please enter a valid Km.";
+    if (!validation.isValid) {
+      newErrors.vin = "Please check validation. ";
     }
 
     // Update error state
@@ -146,6 +138,8 @@ function App() {
       });
     }, 2000);
   };
+
+  // UI
 
   return (
     <ThemeProvider theme={theme}>

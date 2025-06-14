@@ -1,60 +1,93 @@
-import { create } from "@pinata/sdk";
+import { isValidCID, validateCarData } from "../utils/validation";
 
-const pinata = create({
-  pinataApiKey: process.env.REACT_APP_PINATA_API_KEY,
-  pinataSecretApiKey: process.env.REACT_APP_PINATA_SECRET_KEY,
-});
+const PINATA_API_URL = `${process.env.REACT_APP_PINATA_API_URL}`;
 
-export async function handleNFTCreation(carData, vin) {
+// the token uri is the IPFS hash of the metadata
+// That CID becomes accessible at:
+// ipfs://QmABC123... (native IPFS link)
+// https://gateway.pinata.cloud/ipfs/QmABC123... (HTTP link)
+// https://ipfs.io/ipfs/QmABC123... (public IPFS gateway)
+
+export async function handleNFTCreation(carData, tokenUri) {
   try {
-    // Check if NFT with this VIN already exists
-    const filters = {
-      metadata: {
-        name: `Car-${vin}`,
-      },
-    };
+    const validation = validateCarData(carData);
+    if (!validation.isValid) {
+      throw new Error(validation.errors.join(", "));
+    }
 
-    const existingPins = await pinata.pinList(filters);
-
-    // Prepare metadata
     const metadata = {
-      name: `Car-${vin}`,
-      description: `Vehicle Information for VIN: ${vin}`,
+      name: `Car-${tokenUri}`,
+      description: `Vehicle Information for VIN: ${carData.vin}`,
       attributes: {
         vin: carData.vin,
         make: carData.make,
         model: carData.model,
         year: carData.year,
         mileage: carData.mileage,
-        lastUpdate: new Date().toISOString(),
+        timestamp: new Date().toISOString(),
       },
     };
 
-    if (existingPins.count > 0) {
-      // Update existing NFT
-      const existingPin = existingPins.rows[0];
-      await pinata.hashMetadata(existingPin.ipfs_pin_hash, metadata);
-      return {
-        success: true,
-        message: "NFT metadata updated successfully",
-        ipfsHash: existingPin.ipfs_pin_hash,
-      };
-    } else {
-      // Create new NFT
-      const result = await pinata.pinJSONToIPFS(metadata, {
+    //
+    const response = await fetch(`${PINATA_API_URL}/pinJSONToIPFS`, {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+        Authorization: `Bearer ${process.env.REACT_APP_PINATA_JWT}`,
+      },
+      body: JSON.stringify({
+        pinataContent: metadata,
         pinataMetadata: {
-          name: `Car-${vin}`,
+          name: `Car-${tokenUri}`,
         },
-      });
+      }),
+    });
 
-      return {
-        success: true,
-        message: "NFT created successfully",
-        ipfsHash: result.IpfsHash,
-      };
+    if (!response.ok) {
+      throw new Error(`Failed to create NFT: ${response.statusText}`);
     }
+
+    const result = await response.json();
+
+    return {
+      success: true,
+      message: "NFT created successfully",
+      ipfsHash: result.IpfsHash,
+    };
   } catch (error) {
     console.error("Error handling NFT:", error);
+    return {
+      success: false,
+      message: error.message,
+    };
+  }
+}
+
+export async function fetchNFTMetadata(cid) {
+  try {
+    if (!isValidCID(cid)) {
+      throw new Error("Invalid CID format");
+    }
+
+    const response = await fetch(`https://gateway.pinata.cloud/ipfs/${cid}`);
+
+    if (!response.ok) {
+      throw new Error("Failed to fetch NFT metadata");
+    }
+
+    const metadata = await response.json();
+    return {
+      success: true,
+      data: {
+        vin: metadata.attributes.vin,
+        make: metadata.attributes.make,
+        model: metadata.attributes.model,
+        year: metadata.attributes.year,
+        mileage: metadata.attributes.mileage,
+      },
+    };
+  } catch (error) {
+    console.error("Error fetching NFT metadata:", error);
     return {
       success: false,
       message: error.message,
