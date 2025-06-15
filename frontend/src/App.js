@@ -98,7 +98,7 @@ function App() {
     };
 
     // Reset errors
-    const newErrors = {};
+    let newErrors = {};
 
     // Validate all required fields
     if (!vin) newErrors.vin = "VIN is required";
