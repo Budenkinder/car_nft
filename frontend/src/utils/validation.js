@@ -42,27 +42,37 @@ export const validateCarData = (carData) => {
     return { isValid: false, errors: ["Car data is required"] };
   }
 
+  console.log(carData.vin);
+
   if (!isValidVIN(carData.vin)) {
     errors.push("Invalid VIN format");
   }
 
-  if (!carData.make?.trim()) {
-    errors.push("Make is required");
+  if (!carData.brand?.trim()) {
+    errors.push("Brand is required");
   }
+
+  console.log(carData.brand);
 
   if (!carData.model?.trim()) {
     errors.push("Model is required");
   }
+
+  console.log(carData.model);
 
   const year = parseInt(carData.year);
   if (isNaN(year) || year < 1900 || year > new Date().getFullYear() + 1) {
     errors.push("Invalid year");
   }
 
+  console.log(carData.year);
+
   const mileage = parseInt(carData.mileage);
   if (isNaN(mileage) || mileage < 0) {
     errors.push("Invalid mileage");
   }
+
+  console.log(carData.mileage);
 
   return {
     isValid: errors.length === 0,

@@ -110,16 +110,10 @@ function App() {
     if (!mileage) newErrors.mileage = "Mileage is required";
 
     // Validate all car data
-    const validation = validateCarData({
-      vin: carData.vin,
-      brand: carData.brand,
-      model: carData.model,
-      year: carData.year,
-      mileage: carData.mileage,
-    });
+    const validation = validateCarData(carData);
 
     if (!validation.isValid) {
-      console.error(validation.errors);
+      newErrors = { ...newErrors, ...validation.errors };
     }
 
     // Update error state
