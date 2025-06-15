@@ -180,7 +180,40 @@ function App() {
       <Container maxWidth="sm" sx={{ mt: 4 }}>
         <Paper elevation={2} sx={{ p: 3 }}>
           <Typography variant="h5" gutterBottom>
-            Register Repair
+            Search for the VIN NFT
+          </Typography>
+          <Stack spacing={2}>
+            <TextField
+              label="VIN"
+              fullWidth
+              value={vin}
+              onChange={(e) => setVin(e.target.value)}
+              error={!!errors.vin}
+              helperText={
+                errors.vin || "Vehicle Identification Number (17 characters)"
+              }
+            />
+            <Button
+              variant="contained"
+              color="primary"
+              onClick={handleSubmit}
+              disabled={!walletAddress || isSubmitting}
+              startIcon={
+                isSubmitting ? (
+                  <CircularProgress size={20} color="inherit" />
+                ) : null
+              }
+            >
+              {isSubmitting ? "Processing..." : "Load Car NFT"}
+            </Button>
+          </Stack>
+        </Paper>
+      </Container>
+
+      <Container maxWidth="sm" sx={{ mt: 4 }}>
+        <Paper elevation={2} sx={{ p: 3 }}>
+          <Typography variant="h5" gutterBottom>
+            Create or Update CAR NFT
           </Typography>
           <Stack spacing={2}>
             <TextField
