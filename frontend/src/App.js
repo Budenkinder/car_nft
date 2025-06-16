@@ -185,6 +185,7 @@ function App() {
     } catch (error) {
       console.error("Error loading NFT data:", error);
       setErrors({ ...errors, vin: "Failed to load NFT data for this VIN" });
+      setIsLoadingNFT(false);
     } finally {
       setIsLoadingNFT(false);
     }
@@ -210,14 +211,13 @@ function App() {
       <Container maxWidth="sm" sx={{ mt: 4 }}>
         <Paper elevation={2} sx={{ p: 3 }}>
           <Typography variant="h5" gutterBottom>
-            Search for the VIN NFT
+            Search for the VIN NFT: WBADT43483G473829
           </Typography>
           <Stack spacing={2}>
             <TextField
               label="VIN Search"
               fullWidth
-              value={vin}
-              onChange={(e) => setVin(e.target.value)}
+              //onChange={(e) => setVin(e.target.value)}
               error={!!errors.vin}
               helperText={
                 errors.vin || "Vehicle Identification Number (17 characters)"
@@ -227,7 +227,9 @@ function App() {
               variant="contained"
               color="primary"
               onClick={handleLoadNFT}
-              disabled={walletAddress.length == 0 ? false : true}
+              disabled={
+                !isLoadingNFT || walletAddress.length == 0 ? false : true
+              }
               startIcon={
                 isLoadingNFT ? (
                   <CircularProgress size={20} color="inherit" />
@@ -253,12 +255,9 @@ function App() {
             <TextField
               label="VIN"
               fullWidth
-              value={vin}
               onChange={(e) => setVin(e.target.value)}
-              error={!!errors.vin}
-              helperText={
-                errors.vin || "Vehicle Identification Number (17 characters)"
-              }
+              //error={!!errors.vin}
+              helperText={"Vehicle Identification Number (17 characters)"}
             />
             <TextField
               label="Brand"
