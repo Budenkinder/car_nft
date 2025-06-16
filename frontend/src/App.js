@@ -203,7 +203,6 @@ function App() {
           <MetaMaskLogin
             onConnect={connectToMetaMask}
             buttonText="Connect Wallet"
-            requiredChainId="0xaa36a7" // Sepolia testnet
           />
         </Toolbar>
       </AppBar>
