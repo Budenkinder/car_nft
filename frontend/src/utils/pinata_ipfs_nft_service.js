@@ -1,5 +1,7 @@
 import { isValidCID, validateCarData } from "../utils/validation";
+import Web3 from "web3";
 
+const CONTRACT_ABI = {};
 const PINATA_API_URL = `${process.env.REACT_APP_PINATA_API_URL}`;
 
 export const getCidFromContract = async (vin, contractAddress, abi) => {

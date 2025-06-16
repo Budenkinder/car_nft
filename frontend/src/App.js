@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import {
   getCidFromContract,
   handleNFTCreation,
@@ -59,6 +59,7 @@ function App() {
   const [walletAddress, setWalletAddress] = useState("");
   const [errors, setErrors] = useState({});
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [isLoadingNFT, setIsLoadingNFT] = useState(false);
   const [vinLastCid, setVinLastCid] = useState("");
 
   const connectToMetaMask = (address, chainId) => {
@@ -66,22 +67,8 @@ function App() {
     console.log("Connected to chain:", chainId);
     console.log(
       "triggering Smart Contract to fetch vinLastCid, contract address: ",
-      `${process.env.REACT_APP_SMART_CONTRACT_ADDRESS}`
+      address
     );
-
-    // Note: the vin will always be empty
-    getCidFromContract(
-      vin,
-      `${process.env.REACT_APP_SMART_CONTRACT_ADDRESS}`,
-      CONTRACT_ABI
-    )
-      .then((cid) => {
-        setVinLastCid(cid);
-        console.log("CID from contract:", cid);
-      })
-      .catch((error) => {
-        console.error("Error fetching CID from contract:", error);
-      });
   };
 
   const handleSubmit = async (event) => {
@@ -159,6 +146,51 @@ function App() {
     }, 2000);
   };
 
+  const handleLoadNFT = async () => {
+    console.log("vin");
+    console.log(vin);
+    if (!vin) {
+      setErrors({ ...errors, vin: "VIN is required to load NFT data" });
+      return;
+    }
+    console.log("vin valid?");
+    console.log(isValidVIN(vin));
+
+    if (!isValidVIN(vin)) {
+      newErrors = { ...newErrors, ...validation.errors };
+    }
+
+    setIsLoadingNFT(true);
+
+    try {
+      const cid = await getCidFromContract(
+        vin,
+        `${process.env.REACT_APP_SMART_CONTRACT_ADDRESS}`,
+        CONTRACT_ABI
+      );
+
+      setVinLastCid(cid);
+      console.log("CID from contract:", cid);
+
+      if (cid) {
+        const metadata = await fetchNFTMetadata(cid);
+        if (metadata.success) {
+          // Populate form with metadata
+          setBrand(metadata.data.make || "");
+          setModel(metadata.data.model || "");
+          setYear(metadata.data.year || "");
+          setMileage(metadata.data.mileage || "");
+        }
+      }
+    } catch (error) {
+      console.error("Error loading NFT data:", error);
+      setErrors({ ...errors, vin: "Failed to load NFT data for this VIN" });
+      setIsLoadingNFT(false);
+    } finally {
+      setIsLoadingNFT(false);
+    }
+  };
+
   // UI
 
   return (
@@ -172,7 +204,6 @@ function App() {
           <MetaMaskLogin
             onConnect={connectToMetaMask}
             buttonText="Connect Wallet"
-            requiredChainId="0xaa36a7" // Sepolia testnet
           />
         </Toolbar>
       </AppBar>
@@ -180,18 +211,53 @@ function App() {
       <Container maxWidth="sm" sx={{ mt: 4 }}>
         <Paper elevation={2} sx={{ p: 3 }}>
           <Typography variant="h5" gutterBottom>
-            Register Repair
+            Search for the VIN NFT: WBADT43483G473829
+          </Typography>
+          <Stack spacing={2}>
+            <TextField
+              label="VIN Search"
+              fullWidth
+              //onChange={(e) => setVin(e.target.value)}
+              error={!!errors.vin}
+              helperText={
+                errors.vin || "Vehicle Identification Number (17 characters)"
+              }
+            />
+            <Button
+              variant="contained"
+              color="primary"
+              onClick={handleLoadNFT}
+              disabled={
+                !isLoadingNFT || walletAddress.length == 0 ? false : true
+              }
+              startIcon={
+                isLoadingNFT ? (
+                  <CircularProgress size={20} color="inherit" />
+                ) : null
+              }
+            >
+              {isLoadingNFT ? "Loading..." : "Load Car NFT"}
+            </Button>
+          </Stack>
+        </Paper>
+      </Container>
+
+      <Container
+        maxWidth="sm"
+        sx={{ mt: 4 }}
+        disabled={!vinLastCid.length == 0 ? true : false}
+      >
+        <Paper elevation={2} sx={{ p: 3 }}>
+          <Typography variant="h5" gutterBottom>
+            Create or Update CAR NFT
           </Typography>
           <Stack spacing={2}>
             <TextField
               label="VIN"
               fullWidth
-              value={vin}
               onChange={(e) => setVin(e.target.value)}
-              error={!!errors.vin}
-              helperText={
-                errors.vin || "Vehicle Identification Number (17 characters)"
-              }
+              //error={!!errors.vin}
+              helperText={"Vehicle Identification Number (17 characters)"}
             />
             <TextField
               label="Brand"
@@ -246,7 +312,9 @@ function App() {
               variant="contained"
               color="primary"
               onClick={handleSubmit}
-              disabled={!walletAddress || isSubmitting}
+              disabled={
+                walletAddress.length == 0 ? true : false || isSubmitting
+              }
               startIcon={
                 isSubmitting ? (
                   <CircularProgress size={20} color="inherit" />
