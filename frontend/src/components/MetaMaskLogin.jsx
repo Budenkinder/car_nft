@@ -16,6 +16,7 @@ const MetaMaskLogin = ({
 
   // Check for existing connection on component mount
   useEffect(() => {
+
     const checkConnection = async () => {
       if (window.ethereum) {
         try {
@@ -108,10 +109,9 @@ const MetaMaskLogin = ({
 
     try {
       const accounts = await window.ethereum.request({ method: 'eth_requestAccounts' });
-      walletAddress = accounts[0];
       const chainId = await window.ethereum.request({ method: 'eth_chainId' });
       
-      setWalletAddress(walletAddress);
+      setWalletAddress(accounts[0]);
       setChainId(chainId);
        
 
@@ -121,7 +121,7 @@ const MetaMaskLogin = ({
       }
       
       if (onConnect) {
-        onConnect(walletAddress, chainId);
+        onConnect(accounts[0], chainId);
       }
     } catch (err) {
       if (err.code === 4001) {
