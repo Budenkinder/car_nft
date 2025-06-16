@@ -159,6 +159,42 @@ function App() {
     }, 2000);
   };
 
+  const handleLoadNFT = async () => {
+    if (!vin) {
+      setErrors({ ...errors, vin: "VIN is required to load NFT data" });
+      return;
+    }
+
+    setIsSubmitting(true);
+
+    try {
+      const cid = await getCidFromContract(
+        vin,
+        `${process.env.REACT_APP_SMART_CONTRACT_ADDRESS}`,
+        CONTRACT_ABI
+      );
+
+      setVinLastCid(cid);
+      console.log("CID from contract:", cid);
+
+      if (cid) {
+        const metadata = await fetchNFTMetadata(cid);
+        if (metadata.success) {
+          // Populate form with metadata
+          setBrand(metadata.data.make || "");
+          setModel(metadata.data.model || "");
+          setYear(metadata.data.year || "");
+          setMileage(metadata.data.mileage || "");
+        }
+      }
+    } catch (error) {
+      console.error("Error loading NFT data:", error);
+      setErrors({ ...errors, vin: "Failed to load NFT data for this VIN" });
+    } finally {
+      setIsSubmitting(false);
+    }
+  };
+
   // UI
 
   return (
@@ -184,7 +220,7 @@ function App() {
           </Typography>
           <Stack spacing={2}>
             <TextField
-              label="VIN"
+              label="VIN Search"
               fullWidth
               value={vin}
               onChange={(e) => setVin(e.target.value)}
@@ -196,7 +232,7 @@ function App() {
             <Button
               variant="contained"
               color="primary"
-              onClick={handleSubmit}
+              onClick={handleLoadNFT}
               disabled={!walletAddress || isSubmitting}
               startIcon={
                 isSubmitting ? (
