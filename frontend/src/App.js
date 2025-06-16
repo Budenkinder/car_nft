@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import {
   getCidFromContract,
   handleNFTCreation,
@@ -59,6 +59,7 @@ function App() {
   const [walletAddress, setWalletAddress] = useState("");
   const [errors, setErrors] = useState({});
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [isLoadingNFT, setIsLoadingNFT] = useState(false);
   const [vinLastCid, setVinLastCid] = useState("");
 
   const connectToMetaMask = (address, chainId) => {
@@ -66,22 +67,8 @@ function App() {
     console.log("Connected to chain:", chainId);
     console.log(
       "triggering Smart Contract to fetch vinLastCid, contract address: ",
-      `${process.env.REACT_APP_SMART_CONTRACT_ADDRESS}`
+      address
     );
-
-    // Note: the vin will always be empty
-    getCidFromContract(
-      vin,
-      `${process.env.REACT_APP_SMART_CONTRACT_ADDRESS}`,
-      CONTRACT_ABI
-    )
-      .then((cid) => {
-        setVinLastCid(cid);
-        console.log("CID from contract:", cid);
-      })
-      .catch((error) => {
-        console.error("Error fetching CID from contract:", error);
-      });
   };
 
   const handleSubmit = async (event) => {
@@ -160,12 +147,20 @@ function App() {
   };
 
   const handleLoadNFT = async () => {
+    console.log("vin");
+    console.log(vin);
     if (!vin) {
       setErrors({ ...errors, vin: "VIN is required to load NFT data" });
       return;
     }
+    console.log("vin valid?");
+    console.log(isValidVIN(vin));
 
-    setIsSubmitting(true);
+    if (!isValidVIN(vin)) {
+      newErrors = { ...newErrors, ...validation.errors };
+    }
+
+    setIsLoadingNFT(true);
 
     try {
       const cid = await getCidFromContract(
@@ -191,7 +186,7 @@ function App() {
       console.error("Error loading NFT data:", error);
       setErrors({ ...errors, vin: "Failed to load NFT data for this VIN" });
     } finally {
-      setIsSubmitting(false);
+      setIsLoadingNFT(false);
     }
   };
 
@@ -233,20 +228,24 @@ function App() {
               variant="contained"
               color="primary"
               onClick={handleLoadNFT}
-              disabled={!walletAddress || isSubmitting}
+              disabled={walletAddress.length == 0 ? false : true}
               startIcon={
-                isSubmitting ? (
+                isLoadingNFT ? (
                   <CircularProgress size={20} color="inherit" />
                 ) : null
               }
             >
-              {isSubmitting ? "Processing..." : "Load Car NFT"}
+              {isLoadingNFT ? "Loading..." : "Load Car NFT"}
             </Button>
           </Stack>
         </Paper>
       </Container>
 
-      <Container maxWidth="sm" sx={{ mt: 4 }}>
+      <Container
+        maxWidth="sm"
+        sx={{ mt: 4 }}
+        disabled={!vinLastCid.length == 0 ? true : false}
+      >
         <Paper elevation={2} sx={{ p: 3 }}>
           <Typography variant="h5" gutterBottom>
             Create or Update CAR NFT
@@ -315,7 +314,9 @@ function App() {
               variant="contained"
               color="primary"
               onClick={handleSubmit}
-              disabled={!walletAddress || isSubmitting}
+              disabled={
+                walletAddress.length == 0 ? true : false || isSubmitting
+              }
               startIcon={
                 isSubmitting ? (
                   <CircularProgress size={20} color="inherit" />

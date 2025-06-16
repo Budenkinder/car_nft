@@ -75,7 +75,7 @@ const MetaMaskLogin = ({
     }
     
     // Update connection with new chain
-    if (walletAddress && onConnect) {
+    if (walletAddress.length > 0 && onConnect) {
       onConnect(walletAddress, newChainId);
     }
   };
@@ -140,7 +140,7 @@ const MetaMaskLogin = ({
       variant="contained"
       color="primary"
       onClick={!walletAddress ? connectWallet : undefined}
-      disabled={isLoading || walletAddress}
+      disabled={isLoading || walletAddress.length > 0 ? true : false}
       startIcon={isLoading ? <CircularProgress size={20} color="inherit" /> : null}
     >
       {isLoading ? 'Connecting...' : walletAddress ? 'Connected to MetaMaSK' : buttonText}
