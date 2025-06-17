@@ -20,14 +20,13 @@ const MetaMaskLogin = ({
     const checkConnection = async () => {
       if (window.ethereum) {
         try {
-          console.log("trigger checkConnection inside useEffect in MetaMaskLogin");
           const accounts = await window.ethereum.request({ method: 'eth_accounts' });
           if (accounts.length > 0) {
             setWalletAddress(accounts[0]);
             const chainId = await window.ethereum.request({ method: 'eth_chainId' });
             setChainId(chainId);
             if (onConnect) {
-              onConnect(walletAddress, chainId);
+              onConnect(accounts[0], chainId);
             }
           }
         } catch (err) {

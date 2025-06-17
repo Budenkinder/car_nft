@@ -48,7 +48,7 @@ const theme = createTheme({
 });
 
 function App() {
-  const [vin, setVin] = useState("WBADT43483G473829");
+  const [vin, setVin] = useState("");
   const [brand, setBrand] = useState("");
   const [model, setModel] = useState("");
   const [year, setYear] = useState("");
@@ -62,13 +62,10 @@ function App() {
   const [isLoadingNFT, setIsLoadingNFT] = useState(false);
   const [vinLastCid, setVinLastCid] = useState("");
 
-  const connectToMetaMask = (address, chainId) => {
+  const callbackMetaMaskLogin = (address, chainId) => {
     setWalletAddress(address);
-    console.log("Connected to chain:", chainId);
-    console.log(
-      "triggering Smart Contract to fetch vinLastCid, contract address: ",
-      address
-    );
+    console.log("callback Connected to chain:", chainId);
+    console.log("callback contract address: ", address);
   };
 
   const handleSubmit = async (event) => {
@@ -147,14 +144,12 @@ function App() {
   };
 
   const handleLoadNFT = async () => {
-    console.log("vin");
-    console.log(vin);
-    if (!vin) {
+    console.log("vin: ", vin);
+    if (vin.length == 0) {
       setErrors({ ...errors, vin: "VIN is required to load NFT data" });
       return;
     }
-    console.log("vin valid?");
-    console.log(isValidVIN(vin));
+    console.log("vin valid?", isValidVIN(vin));
 
     if (!isValidVIN(vin)) {
       newErrors = { ...newErrors, ...validation.errors };
@@ -202,7 +197,7 @@ function App() {
             Car Repair NFT
           </Typography>
           <MetaMaskLogin
-            onConnect={connectToMetaMask}
+            onConnect={callbackMetaMaskLogin}
             buttonText="Connect Wallet"
           />
         </Toolbar>
@@ -217,7 +212,8 @@ function App() {
             <TextField
               label="VIN Search"
               fullWidth
-              //onChange={(e) => setVin(e.target.value)}
+              value={vin}
+              onChange={(e) => setVin(e.target.value)}
               error={!!errors.vin}
               helperText={
                 errors.vin || "Vehicle Identification Number (17 characters)"
