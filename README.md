@@ -17,3 +17,6 @@ Note that the development build is not optimized.
 To create a production build, use npm run build.
 
 main branch is used for prod build and pipeline vercel
+
+first nft created: IPFS Hash: QmNmw2gxKVQpKCiJRGJ6yL4dTisGs48DUM37WXPX8dboqd
+
