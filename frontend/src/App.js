@@ -49,6 +49,7 @@ const theme = createTheme({
 
 function App() {
   const [vin, setVin] = useState("");
+  const [createVin, setCreateVin] = useState("");
   const [brand, setBrand] = useState("");
   const [model, setModel] = useState("");
   const [year, setYear] = useState("");
@@ -68,11 +69,13 @@ function App() {
     console.log("callback contract address: ", address);
   };
 
+  // creates the IPFS Hash - called NFT
   const handleSubmit = async (event) => {
+    console.log("starting handleSubmi");
     event.preventDefault();
 
     const carData = {
-      vinNumber: vin,
+      vinNumber: createVin,
       carBrand: brand,
       carModel: model,
       carYear: year,
@@ -85,7 +88,7 @@ function App() {
     let newErrors = {};
 
     // Validate all required fields
-    if (!vin) newErrors.vin = "VIN is required";
+    if (!createVin) newErrors.vinNumber = "VINnumber is required";
     if (!brand) newErrors.brand = "Brand is required";
     if (!model) newErrors.model = "Model is required";
     if (!year) newErrors.year = "Year is required";
@@ -94,22 +97,30 @@ function App() {
     if (!mileage) newErrors.mileage = "Mileage is required";
 
     // Validate all car data
+    console.log("carData: ", carData);
     const validation = validateCarData(carData);
 
-    if (!validation.isValid) {
+    console.log("validation: ", validation);
+    const isValid = validation.isValid;
+
+    if (!isValid) {
       newErrors = { ...newErrors, ...validation.errors };
     }
 
-    // Update error state
-    setErrors(newErrors);
+    console.log("newErrors: ", newErrors);
 
     // If there are errors, don't proceed
-    if (Object.keys(newErrors).length > 0) return;
+    if (Object.keys(newErrors).length > 0) {
+      // Update error state
+      setErrors(newErrors);
+      return;
+    }
 
     // Show loading state
     setIsSubmitting(true);
 
-    const result = await handleNFTCreation(carData, vin);
+    console.log("handleNFTCreation");
+    const result = await handleNFTCreation(carData);
 
     if (result.success) {
       // Handle success - maybe show a success message
@@ -251,7 +262,7 @@ function App() {
             <TextField
               label="VIN"
               fullWidth
-              onChange={(e) => setVin(e.target.value)}
+              onChange={(e) => setCreateVin(e.target.value)}
               //error={!!errors.vin}
               helperText={"Vehicle Identification Number (17 characters)"}
             />
@@ -307,7 +318,7 @@ function App() {
             <Button
               variant="contained"
               color="primary"
-              onClick={handleSubmit}
+              onClick={(e) => handleSubmit(e)}
               disabled={
                 walletAddress.length == 0 ? true : false || isSubmitting
               }

@@ -2,8 +2,6 @@ import { isValidCID, validateCarData } from "../utils/validation";
 import Web3 from "web3";
 
 const CONTRACT_ABI = {};
-const PINATA_API_URL = `${process.env.REACT_APP_PINATA_API_URL}`;
-
 export const getCidFromContract = async (vin, contractAddress, abi) => {
   const web3 = new Web3(window.ethereum);
   const contract = new web3.eth.Contract(abi, contractAddress);
@@ -16,7 +14,7 @@ export const getCidFromContract = async (vin, contractAddress, abi) => {
 // https://gateway.pinata.cloud/ipfs/QmABC123... (HTTP link)
 // https://ipfs.io/ipfs/QmABC123... (public IPFS gateway)
 
-export async function handleNFTCreation(carData, tokenUri) {
+export async function handleNFTCreation(carData) {
   try {
     const validation = validateCarData(carData);
     if (!validation.isValid) {
@@ -24,32 +22,38 @@ export async function handleNFTCreation(carData, tokenUri) {
     }
 
     const metadata = {
-      name: `Car-${tokenUri}`,
+      name: `Car-${carData.vin}`,
       description: `Vehicle Information for VIN: ${carData.vin}`,
       attributes: {
-        vin: carData.vin,
-        make: carData.make,
-        model: carData.model,
+        vin: carData.vinNumber,
+        make: carData.carBrand,
+        model: carData.carModel,
+        issueDescription: carData.issueDescription,
+        repairShop: carData.repairShop,
         year: carData.year,
         mileage: carData.mileage,
         timestamp: new Date().toISOString(),
       },
     };
 
+    console.log(`${process.env.REACT_APP_PINATA_API_URL}/pinJSONToIPFS`);
     //
-    const response = await fetch(`${PINATA_API_URL}/pinJSONToIPFS`, {
-      method: "POST",
-      headers: {
-        "Content-Type": "application/json",
-        Authorization: `Bearer ${process.env.REACT_APP_PINATA_JWT}`,
-      },
-      body: JSON.stringify({
-        pinataContent: metadata,
-        pinataMetadata: {
-          name: `Car-${tokenUri}`,
+    const response = await fetch(
+      `${process.env.REACT_APP_PINATA_API_URL}/pinJSONToIPFS`,
+      {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${process.env.REACT_APP_PINATA_JWT}`,
         },
-      }),
-    });
+        body: JSON.stringify({
+          pinataContent: metadata,
+          pinataMetadata: {
+            name: `Car-${carData.vinNumber}`,
+          },
+        }),
+      }
+    );
 
     if (!response.ok) {
       throw new Error(`Failed to create NFT: ${response.statusText}`);
