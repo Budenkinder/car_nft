@@ -19,4 +19,5 @@ To create a production build, use npm run build.
 main branch is used for prod build and pipeline vercel
 
 first nft created: IPFS Hash: QmNmw2gxKVQpKCiJRGJ6yL4dTisGs48DUM37WXPX8dboqd
+https://beige-defeated-zebra-312.mypinata.cloud/ipfs/QmNmw2gxKVQpKCiJRGJ6yL4dTisGs48DUM37WXPX8dboqd
 
