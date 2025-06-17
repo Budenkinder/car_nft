@@ -38,34 +38,36 @@ export const isValidVIN = (vin) => {
 export const validateCarData = (carData) => {
   const errors = [];
 
+  console.log("carData: ", carData);
+
   if (!carData) {
     return { isValid: false, errors: ["Car data is required"] };
   }
 
-  console.log(carData.vin);
+  console.log(carData.vinNumber);
 
-  if (!isValidVIN(carData.vin)) {
+  if (!isValidVIN(carData.vinNumber)) {
     errors.push("Invalid VIN format");
   }
 
-  if (!carData.brand?.trim()) {
+  if (!carData.carBrand?.trim()) {
     errors.push("Brand is required");
   }
 
-  console.log(carData.brand);
+  console.log(carData.carBrand);
 
-  if (!carData.model?.trim()) {
+  if (!carData.carModel?.trim()) {
     errors.push("Model is required");
   }
 
-  console.log(carData.model);
+  console.log(carData.carModel);
 
-  const year = parseInt(carData.year);
+  const year = parseInt(carData.carYear);
   if (isNaN(year) || year < 1900 || year > new Date().getFullYear() + 1) {
     errors.push("Invalid year");
   }
 
-  console.log(carData.year);
+  console.log(carData.carYear);
 
   const mileage = parseInt(carData.mileage);
   if (isNaN(mileage) || mileage < 0) {
