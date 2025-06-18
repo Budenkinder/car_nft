@@ -22,19 +22,21 @@ export async function handleNFTCreation(carData) {
     }
 
     const metadata = {
-      name: `Car-${carData.vin}`,
-      description: `Vehicle Information for VIN: ${carData.vin}`,
+      name: `Car-${carData.vinNumber}`,
+      description: `Vehicle Information for VIN: ${carData.vinNumber}`,
       attributes: {
         vin: carData.vinNumber,
         make: carData.carBrand,
         model: carData.carModel,
         issueDescription: carData.issueDescription,
         repairShop: carData.repairShop,
-        year: carData.year,
+        year: carData.carYear,
         mileage: carData.mileage,
         timestamp: new Date().toISOString(),
       },
     };
+
+    console.log("metadata: ", metadata);
 
     console.log(`${process.env.REACT_APP_PINATA_API_URL}/pinJSONToIPFS`);
     //
