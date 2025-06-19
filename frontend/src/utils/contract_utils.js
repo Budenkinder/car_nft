@@ -82,7 +82,7 @@ export const CAR_NFT_CONTRACT_ABI = [
  * Contract addresses for different networks
  */
 export const CONTRACT_ADDRESSES = {
-  // Sepolia testnet
+  // Sepolia testnet 11155111n:0xaa36a7
   "0xaa36a7": process.env.REACT_APP_SMART_CONTRACT_ADDRESS,
   // Add more networks as needed
 };
@@ -93,5 +93,7 @@ export const CONTRACT_ADDRESSES = {
  * @returns {string|null} - The contract address or null if not found
  */
 export const getContractAddress = (chainId) => {
+  console.log("getContractAddress::chainId: ", chainId);
+  console.log("ENV contract:", process.env.REACT_APP_SMART_CONTRACT_ADDRESS);
   return CONTRACT_ADDRESSES[chainId] || null;
 };

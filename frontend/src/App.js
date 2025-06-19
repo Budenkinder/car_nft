@@ -68,7 +68,7 @@ function App() {
     setWalletAddress(address);
     setChainId(chainId);
     console.log("callback Connected to chain:", chainId);
-    console.log("callback contract address: ", address);
+    console.log("callback wallet address: ", address);
   };
 
   // creates the IPFS Hash - called NFT
@@ -171,11 +171,7 @@ function App() {
     setIsLoadingNFT(true);
 
     try {
-      const cid = await getCidFromContract(
-        vin,
-        `${process.env.REACT_APP_SMART_CONTRACT_ADDRESS}`,
-        CONTRACT_ABI
-      );
+      const cid = await getCidFromContract(vin);
 
       setVinLastCid(cid);
       console.log("CID from contract:", cid);
@@ -219,7 +215,7 @@ function App() {
       <Container maxWidth="sm" sx={{ mt: 4 }}>
         <Paper elevation={2} sx={{ p: 3 }}>
           <Typography variant="h5" gutterBottom>
-            Search for the VIN NFT: WBADT43483G473829
+            Search via Smart Contract for the VIN NFT: WBADT33383G473829
           </Typography>
           <Stack spacing={2}>
             <TextField

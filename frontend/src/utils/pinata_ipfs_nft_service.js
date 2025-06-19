@@ -1,11 +1,38 @@
 import { isValidCID, validateCarData } from "../utils/validation";
 import Web3 from "web3";
-import { CAR_NFT_CONTRACT_ABI } from "./contract_utils";
+import { CAR_NFT_CONTRACT_ABI, getContractAddress } from "./contract_utils";
 
-export const getCidFromContract = async (vin, contractAddress, abi) => {
-  const web3 = new Web3(window.ethereum);
-  const contract = new web3.eth.Contract(abi, contractAddress);
-  return await contract.methods.getCidByVin(vin).call();
+export const getCidFromContract = async (vin) => {
+  try {
+    const web3 = new Web3(window.ethereum);
+    const accounts = await window.ethereum.request({
+      method: "eth_requestAccounts",
+    });
+
+    const chainId = await web3.eth.getChainId();
+    console.log("chainId: ", Number(chainId));
+    const convertedChainId = "0x" + parseInt(Number(chainId), 10).toString(16);
+    console.log(convertedChainId); // Output: 0xaa36a7
+    const address = getContractAddress(convertedChainId.toString());
+    console.log(address);
+
+    console.log("contract address: ", address.toString());
+    const contract = new web3.eth.Contract(
+      CAR_NFT_CONTRACT_ABI,
+      getContractAddress(convertedChainId)
+    );
+
+    const cid = await contract.methods.getCidByVin(vin).call({
+      from: accounts[0],
+    });
+
+    console.log("CID for VIN", vin, ":", cid);
+
+    return cid;
+  } catch (error) {
+    console.error("Error fetching CID:", error);
+    return null;
+  }
 };
 
 const storeCidOnBlockchain = async (vin, cid, chainId) => {
@@ -41,7 +68,7 @@ const storeCidOnBlockchain = async (vin, cid, chainId) => {
 // https://gateway.pinata.cloud/ipfs/QmABC123... (HTTP link)
 // https://ipfs.io/ipfs/QmABC123... (public IPFS gateway)
 
-export async function handleNFTCreation(carData) {
+export async function handleNFTCreation(carData, chainId) {
   try {
     const validation = validateCarData(carData);
     if (!validation.isValid) {
@@ -124,6 +151,7 @@ export async function fetchNFTMetadata(cid) {
     }
 
     const metadata = await response.json();
+    console.log(metadata);
     return {
       success: true,
       data: {
