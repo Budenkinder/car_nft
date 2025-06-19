@@ -6,25 +6,25 @@ import PropTypes from 'prop-types';
 const MetaMaskLogin = ({ 
   onConnect, 
   buttonText = "Connect MetaMask to Sepolia",
-  requiredChainId = "0xaa36a7"
 }) => {
-  const [walletAddress, setWalletAddress] = useState('');
   const [error, setError] = useState('');
+  const [walletAddress, setWalletAddress] = useState('');
   const [isLoading, setIsLoading] = useState(false);
   const [chainId, setChainId] = useState(null);
 
-
+  const requiredChainId = "0xaa36a7"; // Sepolia testnet
 
   // Check for existing connection on component mount
   useEffect(() => {
+
     const checkConnection = async () => {
       if (window.ethereum) {
         try {
           const accounts = await window.ethereum.request({ method: 'eth_accounts' });
           if (accounts.length > 0) {
+            setWalletAddress(accounts[0]);
             const chainId = await window.ethereum.request({ method: 'eth_chainId' });
             setChainId(chainId);
-            setWalletAddress(accounts[0]);
             if (onConnect) {
               onConnect(accounts[0], chainId);
             }
@@ -53,20 +53,21 @@ const MetaMaskLogin = ({
   const handleAccountsChanged = (accounts) => {
     if (accounts.length === 0) {
       // User disconnected
-      setWalletAddress('');
-      setChainId(null);
+      setWalletAddress("");
+      setChainId("");
+      onConnect("", "");
     } else {
       // User switched accounts
-      setWalletAddress(accounts[0]);
       if (onConnect) {
+        setWalletAddress(accounts[0]);
+        setChainId(chainId);
         onConnect(accounts[0], chainId);
       }
     }
   };
 
   const handleChainChanged = (newChainId) => {
-    setChainId(newChainId);
-    
+
     // Check if the new chain matches required chain
     if (newChainId !== requiredChainId) {
       setError(`Wrong network detected. Click to switch.`);
@@ -75,7 +76,7 @@ const MetaMaskLogin = ({
     }
     
     // Update connection with new chain
-    if (walletAddress && onConnect) {
+    if (walletAddress.length > 0 && onConnect) {
       onConnect(walletAddress, newChainId);
     }
   };
@@ -107,19 +108,19 @@ const MetaMaskLogin = ({
 
     try {
       const accounts = await window.ethereum.request({ method: 'eth_requestAccounts' });
-      const address = accounts[0];
       const chainId = await window.ethereum.request({ method: 'eth_chainId' });
       
-      setWalletAddress(address);
+      setWalletAddress(accounts[0]);
       setChainId(chainId);
-      
+       
+
       // Check if on correct network
       if (chainId !== requiredChainId) {
         setError(`Please switch to the required network. Click to switch.`);
       }
       
       if (onConnect) {
-        onConnect(address, chainId);
+        onConnect(accounts[0], chainId);
       }
     } catch (err) {
       if (err.code === 4001) {
@@ -140,7 +141,7 @@ const MetaMaskLogin = ({
       variant="contained"
       color="primary"
       onClick={!walletAddress ? connectWallet : undefined}
-      disabled={isLoading || walletAddress}
+      disabled={walletAddress.length > 0 ? true : false || isLoading}
       startIcon={isLoading ? <CircularProgress size={20} color="inherit" /> : null}
     >
       {isLoading ? 'Connecting...' : walletAddress ? 'Connected to MetaMaSK' : buttonText}
@@ -178,7 +179,6 @@ const MetaMaskLogin = ({
 MetaMaskLogin.propTypes = {
   onConnect: PropTypes.func,
   buttonText: PropTypes.string,
-  requiredChainId: PropTypes.string
 };
 
 export default MetaMaskLogin;

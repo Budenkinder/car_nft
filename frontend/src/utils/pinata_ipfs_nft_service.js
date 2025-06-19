@@ -1,11 +1,38 @@
 import { isValidCID, validateCarData } from "../utils/validation";
-
-const PINATA_API_URL = `${process.env.REACT_APP_PINATA_API_URL}`;
+import Web3 from "web3";
+import { CAR_NFT_CONTRACT_ABI } from "./contract_utils";
 
 export const getCidFromContract = async (vin, contractAddress, abi) => {
   const web3 = new Web3(window.ethereum);
   const contract = new web3.eth.Contract(abi, contractAddress);
   return await contract.methods.getCidByVin(vin).call();
+};
+
+const storeCidOnBlockchain = async (vin, cid, chainId) => {
+  if (!window.ethereum) {
+    alert("Please install MetaMask.");
+    return;
+  }
+
+  try {
+    const web3 = new Web3(window.ethereum);
+    const accounts = await window.ethereum.request({
+      method: "eth_requestAccounts",
+    });
+
+    const contract = new web3.eth.Contract(
+      CAR_NFT_CONTRACT_ABI,
+      getContractAddress(chainId)
+    );
+
+    const tx = await contract.methods.storeCid(vin, cid).send({
+      from: accounts[0],
+    });
+
+    console.log("Transaction successful:", tx.transactionHash);
+  } catch (error) {
+    console.error("Error storing CID:", error);
+  }
 };
 
 // the token uri is the IPFS hash of the metadata
@@ -14,7 +41,7 @@ export const getCidFromContract = async (vin, contractAddress, abi) => {
 // https://gateway.pinata.cloud/ipfs/QmABC123... (HTTP link)
 // https://ipfs.io/ipfs/QmABC123... (public IPFS gateway)
 
-export async function handleNFTCreation(carData, tokenUri) {
+export async function handleNFTCreation(carData) {
   try {
     const validation = validateCarData(carData);
     if (!validation.isValid) {
@@ -22,38 +49,53 @@ export async function handleNFTCreation(carData, tokenUri) {
     }
 
     const metadata = {
-      name: `Car-${tokenUri}`,
-      description: `Vehicle Information for VIN: ${carData.vin}`,
+      name: `Car-${carData.vinNumber}`,
+      description: `Vehicle Information for VIN: ${carData.vinNumber}`,
       attributes: {
-        vin: carData.vin,
-        make: carData.make,
-        model: carData.model,
-        year: carData.year,
+        vin: carData.vinNumber,
+        make: carData.carBrand,
+        model: carData.carModel,
+        issueDescription: carData.issueDescription,
+        repairShop: carData.repairShop,
+        year: carData.carYear,
         mileage: carData.mileage,
         timestamp: new Date().toISOString(),
       },
     };
 
+    console.log("metadata: ", metadata);
+
+    console.log(`${process.env.REACT_APP_PINATA_API_URL}/pinJSONToIPFS`);
     //
-    const response = await fetch(`${PINATA_API_URL}/pinJSONToIPFS`, {
-      method: "POST",
-      headers: {
-        "Content-Type": "application/json",
-        Authorization: `Bearer ${process.env.REACT_APP_PINATA_JWT}`,
-      },
-      body: JSON.stringify({
-        pinataContent: metadata,
-        pinataMetadata: {
-          name: `Car-${tokenUri}`,
+    const response = await fetch(
+      `${process.env.REACT_APP_PINATA_API_URL}/pinJSONToIPFS`,
+      {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${process.env.REACT_APP_PINATA_JWT}`,
         },
-      }),
-    });
+        body: JSON.stringify({
+          pinataContent: metadata,
+          pinataMetadata: {
+            name: `Car-${carData.vinNumber}`,
+          },
+        }),
+      }
+    );
 
     if (!response.ok) {
       throw new Error(`Failed to create NFT: ${response.statusText}`);
     }
 
     const result = await response.json();
+
+    // store the vin and cid here
+    const txResponse = await storeCidOnBlockchain(
+      carData.vinNumber,
+      result.IpfsHash,
+      chainId
+    );
 
     return {
       success: true,
