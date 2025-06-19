@@ -48,6 +48,7 @@ const theme = createTheme({
 });
 
 function App() {
+  const [chainId, setChainId] = useState("");
   const [vin, setVin] = useState("");
   const [createVin, setCreateVin] = useState("");
   const [brand, setBrand] = useState("");
@@ -65,6 +66,7 @@ function App() {
 
   const callbackMetaMaskLogin = (address, chainId) => {
     setWalletAddress(address);
+    setChainId(chainId);
     console.log("callback Connected to chain:", chainId);
     console.log("callback contract address: ", address);
   };
@@ -120,7 +122,7 @@ function App() {
     setIsSubmitting(true);
 
     console.log("handleNFTCreation");
-    const result = await handleNFTCreation(carData);
+    const result = await handleNFTCreation(carData, chainId);
 
     if (result.success) {
       // Handle success - maybe show a success message
