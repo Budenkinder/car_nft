@@ -1,11 +1,38 @@
 import { isValidCID, validateCarData } from "../utils/validation";
 import Web3 from "web3";
+import { CAR_NFT_CONTRACT_ABI } from "./contract_utils";
 
-const CONTRACT_ABI = {};
 export const getCidFromContract = async (vin, contractAddress, abi) => {
   const web3 = new Web3(window.ethereum);
   const contract = new web3.eth.Contract(abi, contractAddress);
   return await contract.methods.getCidByVin(vin).call();
+};
+
+const storeCidOnBlockchain = async (vin, cid, chainId) => {
+  if (!window.ethereum) {
+    alert("Please install MetaMask.");
+    return;
+  }
+
+  try {
+    const web3 = new Web3(window.ethereum);
+    const accounts = await window.ethereum.request({
+      method: "eth_requestAccounts",
+    });
+
+    const contract = new web3.eth.Contract(
+      CAR_NFT_CONTRACT_ABI,
+      getContractAddress(chainId)
+    );
+
+    const tx = await contract.methods.storeCid(vin, cid).send({
+      from: accounts[0],
+    });
+
+    console.log("Transaction successful:", tx.transactionHash);
+  } catch (error) {
+    console.error("Error storing CID:", error);
+  }
 };
 
 // the token uri is the IPFS hash of the metadata
@@ -62,6 +89,13 @@ export async function handleNFTCreation(carData) {
     }
 
     const result = await response.json();
+
+    // store the vin and cid here
+    const txResponse = await storeCidOnBlockchain(
+      carData.vinNumber,
+      result.IpfsHash,
+      chainId
+    );
 
     return {
       success: true,
