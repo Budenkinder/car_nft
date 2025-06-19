@@ -21,3 +21,7 @@ main branch is used for prod build and pipeline vercel
 first nft created: IPFS Hash: QmNmw2gxKVQpKCiJRGJ6yL4dTisGs48DUM37WXPX8dboqd
 https://beige-defeated-zebra-312.mypinata.cloud/ipfs/QmNmw2gxKVQpKCiJRGJ6yL4dTisGs48DUM37WXPX8dboqd
 
+using sepolia testnet 
+smart contract is coded via remix
+
+Flow => web3 is creating ipfs, sending to blockchain
