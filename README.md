@@ -23,5 +23,4 @@ https://beige-defeated-zebra-312.mypinata.cloud/ipfs/QmNmw2gxKVQpKCiJRGJ6yL4dTis
 
 using sepolia testnet 
 smart contract is coded via remix
-
-Flow => web3 is creating ipfs, sending to blockchain
+the contract can be reloaded by using "Deploy at Address". E.x. which was already deployed to sepolia: 0x4d3dCc05C42D8968BAe61d3DEd8CEdBaaD563074
