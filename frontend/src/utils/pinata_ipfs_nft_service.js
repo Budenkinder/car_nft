@@ -1,6 +1,7 @@
 import { isValidCID, validateCarData } from "../utils/validation";
 import Web3 from "web3";
-import { CAR_NFT_CONTRACT_ABI, getContractAddress } from "./contract_utils";
+import contractAbi from "../utils/contract_abi.json";
+import { getContractAddress } from "./contract_utils";
 
 export const getCidFromContract = async (vin) => {
   try {
@@ -18,7 +19,7 @@ export const getCidFromContract = async (vin) => {
 
     console.log("contract address: ", address.toString());
     const contract = new web3.eth.Contract(
-      CAR_NFT_CONTRACT_ABI,
+      contractAbi,
       getContractAddress(convertedChainId)
     );
 
@@ -48,7 +49,7 @@ const storeCidOnBlockchain = async (vin, cid, chainId) => {
     });
 
     const contract = new web3.eth.Contract(
-      CAR_NFT_CONTRACT_ABI,
+      contractAbi,
       getContractAddress(chainId)
     );
 
