@@ -1,10 +1,10 @@
 // MetaMaskLogin.jsx
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { Button, Typography, Box, CircularProgress } from '@mui/material';
 import PropTypes from 'prop-types';
 
-const MetaMaskLogin = ({ 
-  onConnect, 
+const MetaMaskLogin = ({
+  onConnect,
   buttonText = "Connect MetaMask to Sepolia",
 }) => {
   const [error, setError] = useState('');
@@ -12,74 +12,62 @@ const MetaMaskLogin = ({
   const [isLoading, setIsLoading] = useState(false);
   const [chainId, setChainId] = useState(null);
 
+  const walletAddressRef = useRef(walletAddress);
+  walletAddressRef.current = walletAddress;
+
   const requiredChainId = "0xaa36a7"; // Sepolia testnet
 
-  // Check for existing connection on component mount
   useEffect(() => {
+    if (!window.ethereum) return;
+
+    const handleAccountsChanged = async (accounts) => {
+      if (!accounts || accounts.length === 0) {
+        setWalletAddress("");
+        setChainId(null);
+        if (onConnect) onConnect("", "");
+      } else {
+        const currentChainId = await window.ethereum.request({ method: 'eth_chainId' });
+        setWalletAddress(accounts[0]);
+        setChainId(currentChainId);
+        if (onConnect) onConnect(accounts[0], currentChainId);
+      }
+    };
+
+    const handleChainChanged = (newChainId) => {
+      setChainId(newChainId);
+      if (newChainId !== requiredChainId) {
+        setError('Wrong network detected. Click to switch.');
+      } else {
+        setError('');
+      }
+      if (walletAddressRef.current && onConnect) {
+        onConnect(walletAddressRef.current, newChainId);
+      }
+    };
 
     const checkConnection = async () => {
-      if (window.ethereum) {
-        try {
-          const accounts = await window.ethereum.request({ method: 'eth_accounts' });
-          if (accounts.length > 0) {
-            setWalletAddress(accounts[0]);
-            const chainId = await window.ethereum.request({ method: 'eth_chainId' });
-            setChainId(chainId);
-            if (onConnect) {
-              onConnect(accounts[0], chainId);
-            }
-          }
-        } catch (err) {
-          console.error("Error checking existing connection:", err);
+      try {
+        const accounts = await window.ethereum.request({ method: 'eth_accounts' });
+        if (accounts.length > 0) {
+          const currentChainId = await window.ethereum.request({ method: 'eth_chainId' });
+          setWalletAddress(accounts[0]);
+          setChainId(currentChainId);
+          if (onConnect) onConnect(accounts[0], currentChainId);
         }
+      } catch (err) {
+        console.error("Error checking existing connection:", err);
       }
     };
-    
+
     checkConnection();
-    
-    if (window.ethereum) {
-      window.ethereum.on('accountsChanged', handleAccountsChanged);
-      window.ethereum.on('chainChanged', handleChainChanged);
-    }
-    
+    window.ethereum.on('accountsChanged', handleAccountsChanged);
+    window.ethereum.on('chainChanged', handleChainChanged);
+
     return () => {
-      if (window.ethereum) {
-        window.ethereum.removeListener('accountsChanged', handleAccountsChanged);
-        window.ethereum.removeListener('chainChanged', handleChainChanged);
-      }
+      window.ethereum.removeListener('accountsChanged', handleAccountsChanged);
+      window.ethereum.removeListener('chainChanged', handleChainChanged);
     };
   }, [onConnect]);
-
-  const handleAccountsChanged = (accounts) => {
-    if (accounts.length === 0) {
-      // User disconnected
-      setWalletAddress("");
-      setChainId("");
-      onConnect("", "");
-    } else {
-      // User switched accounts
-      if (onConnect) {
-        setWalletAddress(accounts[0]);
-        setChainId(chainId);
-        onConnect(accounts[0], chainId);
-      }
-    }
-  };
-
-  const handleChainChanged = (newChainId) => {
-
-    // Check if the new chain matches required chain
-    if (newChainId !== requiredChainId) {
-      setError(`Wrong network detected. Click to switch.`);
-    } else {
-      setError('');
-    }
-    
-    // Update connection with new chain
-    if (walletAddress.length > 0 && onConnect) {
-      onConnect(walletAddress, newChainId);
-    }
-  };
 
   const switchNetwork = async () => {
     try {
@@ -87,9 +75,8 @@ const MetaMaskLogin = ({
         method: 'wallet_switchEthereumChain',
         params: [{ chainId: requiredChainId }],
       });
-    } catch (error) {
-      // This error code indicates that the chain has not been added to MetaMask
-      if (error.code === 4902) {
+    } catch (err) {
+      if (err.code === 4902) {
         setError('Please add this network to your MetaMask.');
       } else {
         setError('Failed to switch network.');
@@ -108,23 +95,20 @@ const MetaMaskLogin = ({
 
     try {
       const accounts = await window.ethereum.request({ method: 'eth_requestAccounts' });
-      const chainId = await window.ethereum.request({ method: 'eth_chainId' });
-      
-      setWalletAddress(accounts[0]);
-      setChainId(chainId);
-       
+      const currentChainId = await window.ethereum.request({ method: 'eth_chainId' });
 
-      // Check if on correct network
-      if (chainId !== requiredChainId) {
-        setError(`Please switch to the required network. Click to switch.`);
+      setWalletAddress(accounts[0]);
+      setChainId(currentChainId);
+
+      if (currentChainId !== requiredChainId) {
+        setError('Please switch to the required network. Click to switch.');
       }
-      
+
       if (onConnect) {
-        onConnect(accounts[0], chainId);
+        onConnect(accounts[0], currentChainId);
       }
     } catch (err) {
       if (err.code === 4001) {
-        // User rejected the request
         setError('Connection rejected. Please approve the MetaMask connection.');
       } else {
         setError(`Failed to connect: ${err.message || 'Unknown error'}`);
@@ -136,44 +120,44 @@ const MetaMaskLogin = ({
   };
 
   return (
-  <Box sx={{ mb: 3 }}>
-    <Button
-      variant="contained"
-      color="primary"
-      onClick={!walletAddress ? connectWallet : undefined}
-      disabled={walletAddress.length > 0 ? true : false || isLoading}
-      startIcon={isLoading ? <CircularProgress size={20} color="inherit" /> : null}
-    >
-      {isLoading ? 'Connecting...' : walletAddress ? 'Connected to MetaMaSK' : buttonText}
-    </Button>
-
-    {walletAddress && (
-      <Typography sx={{ mt: 1 }}>
-        Connected: {walletAddress.substring(0, 6)}...{walletAddress.substring(walletAddress.length - 4)}
-      </Typography>
-    )}
-
-    {chainId !== requiredChainId && walletAddress && (
-      <Typography
-        color="warning.main"
-        sx={{ mt: 1, cursor: 'pointer' }}
-        onClick={switchNetwork}
+    <Box sx={{ mb: 3 }}>
+      <Button
+        variant="contained"
+        color="primary"
+        onClick={!walletAddress ? connectWallet : undefined}
+        disabled={walletAddress.length > 0 || isLoading}
+        startIcon={isLoading ? <CircularProgress size={20} color="inherit" /> : null}
       >
-        Wrong network. Click to switch.
-      </Typography>
-    )}
+        {isLoading ? 'Connecting...' : walletAddress ? 'Connected to MetaMask' : buttonText}
+      </Button>
 
-    {error && (
-      <Typography
-        color="error"
-        sx={{ mt: 1, cursor: error.includes('switch') ? 'pointer' : 'default' }}
-        onClick={error.includes('switch') ? switchNetwork : null}
-      >
-        {error}
-      </Typography>
-    )}
-  </Box>
-);
+      {walletAddress && (
+        <Typography sx={{ mt: 1 }}>
+          Connected: {walletAddress.substring(0, 6)}...{walletAddress.substring(walletAddress.length - 4)}
+        </Typography>
+      )}
+
+      {chainId !== requiredChainId && walletAddress && (
+        <Typography
+          color="warning.main"
+          sx={{ mt: 1, cursor: 'pointer' }}
+          onClick={switchNetwork}
+        >
+          Wrong network. Click to switch.
+        </Typography>
+      )}
+
+      {error && (
+        <Typography
+          color="error"
+          sx={{ mt: 1, cursor: error.includes('switch') ? 'pointer' : 'default' }}
+          onClick={error.includes('switch') ? switchNetwork : null}
+        >
+          {error}
+        </Typography>
+      )}
+    </Box>
+  );
 };
 
 MetaMaskLogin.propTypes = {
