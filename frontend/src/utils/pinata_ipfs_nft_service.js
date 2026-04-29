@@ -6,28 +6,17 @@ import { getContractAddress } from "./contract_utils";
 export const getCidFromContract = async (vin) => {
   try {
     const web3 = new Web3(window.ethereum);
-    const accounts = await window.ethereum.request({
-      method: "eth_requestAccounts",
-    });
+    const accounts = await window.ethereum.request({ method: "eth_accounts" });
+    if (accounts.length === 0) {
+      throw new Error("No wallet connected");
+    }
 
     const chainId = await web3.eth.getChainId();
-    console.log("chainId: ", Number(chainId));
     const convertedChainId = "0x" + parseInt(Number(chainId), 10).toString(16);
-    console.log(convertedChainId); // Output: 0xaa36a7
-    const address = getContractAddress(convertedChainId.toString());
-    console.log(address);
+    const address = getContractAddress(convertedChainId);
 
-    console.log("contract address: ", address.toString());
-    const contract = new web3.eth.Contract(
-      contractAbi,
-      getContractAddress(convertedChainId)
-    );
-
-    const cid = await contract.methods.getCidByVin(vin).call({
-      from: accounts[0],
-    });
-
-    console.log("CID for VIN", vin, ":", cid);
+    const contract = new web3.eth.Contract(contractAbi, address);
+    const cid = await contract.methods.getCidByVin(vin).call({ from: accounts[0] });
 
     return cid;
   } catch (error) {
@@ -38,42 +27,23 @@ export const getCidFromContract = async (vin) => {
 
 const storeCidOnBlockchain = async (vin, cid, chainId) => {
   if (!window.ethereum) {
-    alert("Please install MetaMask.");
-    return;
+    throw new Error("Please install MetaMask.");
   }
 
-  try {
-    const web3 = new Web3(window.ethereum);
-    const accounts = await window.ethereum.request({
-      method: "eth_requestAccounts",
-    });
+  const web3 = new Web3(window.ethereum);
+  const accounts = await web3.eth.getAccounts();
 
-    const contract = new web3.eth.Contract(
-      contractAbi,
-      getContractAddress(chainId)
-    );
+  const contract = new web3.eth.Contract(contractAbi, getContractAddress(chainId));
+  const tx = await contract.methods.storeCid(vin, cid).send({ from: accounts[0] });
 
-    const tx = await contract.methods.storeCid(vin, cid).send({
-      from: accounts[0],
-    });
-
-    console.log("Transaction successful:", tx.transactionHash);
-  } catch (error) {
-    console.error("Error storing CID:", error);
-  }
+  return tx.transactionHash;
 };
-
-// the token uri is the IPFS hash of the metadata
-// That CID becomes accessible at:
-// ipfs://QmABC123... (native IPFS link)
-// https://gateway.pinata.cloud/ipfs/QmABC123... (HTTP link)
-// https://ipfs.io/ipfs/QmABC123... (public IPFS gateway)
 
 export async function handleNFTCreation(carData, chainId) {
   try {
     const validation = validateCarData(carData);
     if (!validation.isValid) {
-      throw new Error(validation.errors.join(", "));
+      throw new Error(Object.values(validation.errors).join(", "));
     }
 
     const metadata = {
@@ -91,10 +61,6 @@ export async function handleNFTCreation(carData, chainId) {
       },
     };
 
-    console.log("metadata: ", metadata);
-
-    console.log(`${process.env.REACT_APP_PINATA_API_URL}/pinJSONToIPFS`);
-    //
     const response = await fetch(
       `${process.env.REACT_APP_PINATA_API_URL}/pinJSONToIPFS`,
       {
@@ -117,18 +83,13 @@ export async function handleNFTCreation(carData, chainId) {
     }
 
     const result = await response.json();
-
-    // store the vin and cid here
-    const txResponse = await storeCidOnBlockchain(
-      carData.vinNumber,
-      result.IpfsHash,
-      chainId
-    );
+    const txHash = await storeCidOnBlockchain(carData.vinNumber, result.IpfsHash, chainId);
 
     return {
       success: true,
       message: "NFT created successfully",
       ipfsHash: result.IpfsHash,
+      txHash,
     };
   } catch (error) {
     console.error("Error handling NFT:", error);
@@ -152,7 +113,6 @@ export async function fetchNFTMetadata(cid) {
     }
 
     const metadata = await response.json();
-    console.log(metadata);
     return {
       success: true,
       data: {

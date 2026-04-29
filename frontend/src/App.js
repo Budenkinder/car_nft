@@ -1,13 +1,10 @@
-import React, { useState, useEffect } from "react";
+import React, { useState, useCallback } from "react";
 import {
   getCidFromContract,
   handleNFTCreation,
+  fetchNFTMetadata,
 } from "./utils/pinata_ipfs_nft_service";
 import { isValidVIN, validateCarData } from "./utils/validation";
-import Web3 from "web3";
-import { fetchNFTMetadata } from "./utils/pinata_ipfs_nft_service";
-
-const CONTRACT_ABI = [];
 
 import {
   ThemeProvider,
@@ -64,16 +61,12 @@ function App() {
   const [isLoadingNFT, setIsLoadingNFT] = useState(false);
   const [vinLastCid, setVinLastCid] = useState("");
 
-  const callbackMetaMaskLogin = (address, chainId) => {
+  const callbackMetaMaskLogin = useCallback((address, newChainId) => {
     setWalletAddress(address);
-    setChainId(chainId);
-    console.log("callback Connected to chain:", chainId);
-    console.log("callback wallet address: ", address);
-  };
+    setChainId(newChainId);
+  }, []);
 
-  // creates the IPFS Hash - called NFT
   const handleSubmit = async (event) => {
-    console.log("starting handleSubmi");
     event.preventDefault();
 
     const carData = {
@@ -86,11 +79,9 @@ function App() {
       mileage: mileage,
     };
 
-    // Reset errors
     let newErrors = {};
 
-    // Validate all required fields
-    if (!createVin) newErrors.vinNumber = "VINnumber is required";
+    if (!createVin) newErrors.vinNumber = "VIN number is required";
     if (!brand) newErrors.brand = "Brand is required";
     if (!model) newErrors.model = "Model is required";
     if (!year) newErrors.year = "Year is required";
@@ -98,88 +89,51 @@ function App() {
     if (!shop) newErrors.shop = "Repair shop is required";
     if (!mileage) newErrors.mileage = "Mileage is required";
 
-    // Validate all car data
-    console.log("carData: ", carData);
     const validation = validateCarData(carData);
-
-    console.log("validation: ", validation);
-    const isValid = validation.isValid;
-
-    if (!isValid) {
+    if (!validation.isValid) {
       newErrors = { ...newErrors, ...validation.errors };
     }
 
-    console.log("newErrors: ", newErrors);
-
-    // If there are errors, don't proceed
     if (Object.keys(newErrors).length > 0) {
-      // Update error state
       setErrors(newErrors);
       return;
     }
 
-    // Show loading state
+    setErrors({});
     setIsSubmitting(true);
 
-    console.log("handleNFTCreation");
     const result = await handleNFTCreation(carData, chainId);
 
     if (result.success) {
-      // Handle success - maybe show a success message
-      console.log(`IPFS Hash: ${result.ipfsHash}`);
+      setTxHash(result.txHash);
     } else {
-      // Handle error
-      console.error(result.message);
+      setErrors({ general: result.message });
     }
 
-    // Simulate blockchain transaction
-    setTimeout(() => {
-      const mockTxHash =
-        "0x" +
-        Array(64)
-          .fill(0)
-          .map(() => Math.floor(Math.random() * 16).toString(16))
-          .join("");
-      setTxHash(mockTxHash);
-      setIsSubmitting(false);
-
-      console.log("Submitting repair record:", {
-        vin,
-        brand,
-        model,
-        year,
-        issue,
-        shop,
-        mileage,
-        txHash: mockTxHash,
-      });
-    }, 2000);
+    setIsSubmitting(false);
   };
 
   const handleLoadNFT = async () => {
-    console.log("vin: ", vin);
-    if (vin.length == 0) {
+    if (vin.length === 0) {
       setErrors({ ...errors, vin: "VIN is required to load NFT data" });
       return;
     }
-    console.log("vin valid?", isValidVIN(vin));
 
     if (!isValidVIN(vin)) {
-      newErrors = { ...newErrors, ...validation.errors };
+      setErrors({ ...errors, vin: "Invalid VIN format" });
+      return;
     }
 
+    setErrors({ ...errors, vin: undefined });
     setIsLoadingNFT(true);
 
     try {
       const cid = await getCidFromContract(vin);
-
-      setVinLastCid(cid);
-      console.log("CID from contract:", cid);
+      setVinLastCid(cid || "");
 
       if (cid) {
         const metadata = await fetchNFTMetadata(cid);
         if (metadata.success) {
-          // Populate form with metadata
           setBrand(metadata.data.make || "");
           setModel(metadata.data.model || "");
           setYear(metadata.data.year || "");
@@ -189,13 +143,10 @@ function App() {
     } catch (error) {
       console.error("Error loading NFT data:", error);
       setErrors({ ...errors, vin: "Failed to load NFT data for this VIN" });
-      setIsLoadingNFT(false);
     } finally {
       setIsLoadingNFT(false);
     }
   };
-
-  // UI
 
   return (
     <ThemeProvider theme={theme}>
@@ -232,9 +183,7 @@ function App() {
               variant="contained"
               color="primary"
               onClick={handleLoadNFT}
-              disabled={
-                !isLoadingNFT || walletAddress.length == 0 ? false : true
-              }
+              disabled={isLoadingNFT || walletAddress.length === 0}
               startIcon={
                 isLoadingNFT ? (
                   <CircularProgress size={20} color="inherit" />
@@ -244,14 +193,15 @@ function App() {
               {isLoadingNFT ? "Loading..." : "Load Car NFT"}
             </Button>
           </Stack>
+          {vinLastCid && (
+            <Typography variant="body2" sx={{ mt: 2 }}>
+              Loaded CID: {vinLastCid}
+            </Typography>
+          )}
         </Paper>
       </Container>
 
-      <Container
-        maxWidth="sm"
-        sx={{ mt: 4 }}
-        disabled={!vinLastCid.length == 0 ? true : false}
-      >
+      <Container maxWidth="sm" sx={{ mt: 4 }}>
         <Paper elevation={2} sx={{ p: 3 }}>
           <Typography variant="h5" gutterBottom>
             Create or Update CAR NFT
@@ -260,9 +210,13 @@ function App() {
             <TextField
               label="VIN"
               fullWidth
+              value={createVin}
               onChange={(e) => setCreateVin(e.target.value)}
-              //error={!!errors.vin}
-              helperText={"Vehicle Identification Number (17 characters)"}
+              error={!!errors.vinNumber}
+              helperText={
+                errors.vinNumber ||
+                "Vehicle Identification Number (17 characters)"
+              }
             />
             <TextField
               label="Brand"
@@ -316,10 +270,8 @@ function App() {
             <Button
               variant="contained"
               color="primary"
-              onClick={(e) => handleSubmit(e)}
-              disabled={
-                walletAddress.length == 0 ? true : false || isSubmitting
-              }
+              onClick={handleSubmit}
+              disabled={walletAddress.length === 0 || isSubmitting}
               startIcon={
                 isSubmitting ? (
                   <CircularProgress size={20} color="inherit" />
@@ -329,6 +281,12 @@ function App() {
               {isSubmitting ? "Processing..." : "Submit Repair"}
             </Button>
           </Stack>
+
+          {errors.general && (
+            <Typography color="error" sx={{ mt: 2 }}>
+              {errors.general}
+            </Typography>
+          )}
 
           {txHash && (
             <Box mt={2}>
