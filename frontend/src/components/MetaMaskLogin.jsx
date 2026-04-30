@@ -3,6 +3,8 @@ import React, { useState, useEffect, useRef } from 'react';
 import { Button, Typography, Box, CircularProgress } from '@mui/material';
 import PropTypes from 'prop-types';
 
+//functions
+
 const MetaMaskLogin = ({
   onConnect,
   buttonText = "Connect MetaMask to Sepolia",
