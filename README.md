@@ -1,6 +1,6 @@
 # Car Repair NFT
 
-A dApp that records vehicle repair history on-chain. Each car (identified by its 17-character VIN) gets a single NFT whose `tokenURI` points at the latest IPFS CID for that car's repair metadata. Updating a record updates the NFT's URI in place — no new mint — and successful writes pay out an ERC-20 reward (CRT) to the caller.
+A dApp that records vehicle repair history on-chain. Each car, identified by its 17-character VIN, gets a single NFT whose `tokenURI` points at the latest IPFS CID for that car's repair metadata. Updating a record updates the NFT's URI in place — no new mint — and successful writes pay out an ERC-20 reward (CRT) to the caller.
 
 Flow diagram: https://excalidraw.com/#json=zV5wVQt8GJoK-GYiO-DQn,5mQBcgQrwVfJEm3sxA0Dyw
 
