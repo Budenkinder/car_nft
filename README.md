@@ -83,7 +83,6 @@ Create `frontend/.env` (CRA reads `REACT_APP_*` at build time — they end up in
 
 ```
 REACT_APP_SMART_CONTRACT_ADDRESS=0x...        # VinCidRegistry on Sepolia
-REACT_APP_PINATA_API_URL=https://api.pinata.cloud/pinning
 REACT_APP_PINATA_JWT=eyJhbGciOi...             # Pinata JWT
 ```
 
@@ -116,7 +115,6 @@ The repo already contains [frontend/vercel.json](frontend/vercel.json) with the 
 6. **Output Directory**: `build` (default for CRA).
 7. **Environment Variables** — add for *Production*, *Preview*, and *Development*:
    - `REACT_APP_SMART_CONTRACT_ADDRESS`
-   - `REACT_APP_PINATA_API_URL`
    - `REACT_APP_PINATA_JWT`
 8. Click **Deploy**. Subsequent pushes to the default branch redeploy automatically; PRs get preview URLs.
 
@@ -127,7 +125,6 @@ cd frontend
 vercel login
 vercel             # first run: link the project, pick "frontend" as root
 vercel env add REACT_APP_SMART_CONTRACT_ADDRESS
-vercel env add REACT_APP_PINATA_API_URL
 vercel env add REACT_APP_PINATA_JWT
 vercel --prod      # ship to production
 ```
@@ -144,7 +141,7 @@ Vercel only injects env vars at build time for CRA. After changing one in the da
 ### Common gotchas
 - **Blank page / 404 on refresh**: confirm the SPA rewrite is active.
 - **`Contract address: null`**: `REACT_APP_SMART_CONTRACT_ADDRESS` isn't set for the target environment, or the user is on a chain other than Sepolia.
-- **`Failed to create NFT`**: invalid/expired Pinata JWT, or `REACT_APP_PINATA_API_URL` missing/typo.
+- **`Pinata 401/403`**: invalid, expired, or under-scoped Pinata JWT. The error now surfaces the response body — check it for the exact reason.
 - **Reward not received**: registry's CRT balance is empty, or `rewardAmount` is `0`. The write still succeeded.
 - **Secrets in the bundle**: anything prefixed `REACT_APP_` ships to the browser. Use a Pinata JWT scoped to pinning only; rotate if leaked.
 

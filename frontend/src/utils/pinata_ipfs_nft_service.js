@@ -62,7 +62,7 @@ export async function handleNFTCreation(carData, chainId) {
     };
 
     const response = await fetch(
-      `${process.env.REACT_APP_PINATA_API_URL}/pinJSONToIPFS`,
+      "https://api.pinata.cloud/pinning/pinJSONToIPFS",
       {
         method: "POST",
         headers: {
@@ -79,7 +79,8 @@ export async function handleNFTCreation(carData, chainId) {
     );
 
     if (!response.ok) {
-      throw new Error(`Failed to create NFT: ${response.statusText}`);
+      const body = await response.text();
+      throw new Error(`Pinata ${response.status}: ${body || response.statusText || "no body"}`);
     }
 
     const result = await response.json();
