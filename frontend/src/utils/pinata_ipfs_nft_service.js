@@ -3,6 +3,10 @@ import Web3 from "web3";
 import contractAbi from "../utils/contract_abi.json";
 import { getContractAddress } from "./contract_utils";
 
+const PINATA_BASE = (
+  process.env.REACT_APP_PINATA_API_URL || "https://api.pinata.cloud/pinning"
+).replace(/\/+$/, "");
+
 export const getCidFromContract = async (vin) => {
   try {
     const web3 = new Web3(window.ethereum);
@@ -62,7 +66,7 @@ export async function handleNFTCreation(carData, chainId) {
     };
 
     const response = await fetch(
-      "https://api.pinata.cloud/pinning/pinJSONToIPFS",
+      `${PINATA_BASE}/pinJSONToIPFS`,
       {
         method: "POST",
         headers: {
