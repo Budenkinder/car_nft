@@ -3,9 +3,7 @@ import Web3 from "web3";
 import contractAbi from "../utils/contract_abi.json";
 import { getContractAddress } from "./contract_utils";
 
-const PINATA_BASE = (
-  process.env.REACT_APP_PINATA_API_URL || "https://api.pinata.cloud/pinning"
-).replace(/\/+$/, "");
+const PINATA_BASE = process.env.REACT_APP_PINATA_API_URL.replace(/\/+$/, "");
 
 export const getCidFromContract = async (vin) => {
   try {
