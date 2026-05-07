@@ -82,8 +82,9 @@ Stack: React 18 (CRA), Material UI 5, ethers v5, web3 v4, MetaMask provider.
 Create `frontend/.env` (CRA reads `REACT_APP_*` at build time — they end up in the bundle, so don't put truly secret keys here).
 
 ```
-REACT_APP_SMART_CONTRACT_ADDRESS=0x...        # VinCidRegistry on Sepolia
-REACT_APP_PINATA_JWT=eyJhbGciOi...             # Pinata JWT
+REACT_APP_SMART_CONTRACT_ADDRESS=<vin-cid-registry-address>   # VinCidRegistry on Sepolia
+REACT_APP_PINATA_JWT=<your-pinata-jwt>                         # Pinata JWT (bearer auth)
+REACT_APP_PINATA_API_URL=https://api.pinata.cloud/pinning     # required
 ```
 
 The chain → contract mapping lives in [frontend/src/utils/contract_utils.js](frontend/src/utils/contract_utils.js); only Sepolia (`0xaa36a7`) is wired up. To support another network, add an entry there.
@@ -116,6 +117,7 @@ The repo already contains [frontend/vercel.json](frontend/vercel.json) with the 
 7. **Environment Variables** — add for *Production*, *Preview*, and *Development*:
    - `REACT_APP_SMART_CONTRACT_ADDRESS`
    - `REACT_APP_PINATA_JWT`
+   - `REACT_APP_PINATA_API_URL`
 8. Click **Deploy**. Subsequent pushes to the default branch redeploy automatically; PRs get preview URLs.
 
 ### Option B — Vercel CLI
@@ -126,6 +128,7 @@ vercel login
 vercel             # first run: link the project, pick "frontend" as root
 vercel env add REACT_APP_SMART_CONTRACT_ADDRESS
 vercel env add REACT_APP_PINATA_JWT
+vercel env add REACT_APP_PINATA_API_URL
 vercel --prod      # ship to production
 ```
 
