@@ -28,19 +28,24 @@ export const getCidFromContract = async (vin) => {
 };
 
 const storeCidOnBlockchain = async (vin, cid, chainId) => {
+  console.log("[storeCidOnBlockchain] start", { vin, cid, chainId });
+
   if (!window.ethereum) {
     throw new Error("Please install MetaMask.");
   }
 
   const web3 = new Web3(window.ethereum);
   const accounts = await web3.eth.getAccounts();
+  console.log("[storeCidOnBlockchain] account", accounts[0]);
 
   const address = getContractAddress(chainId);
+  console.log("[storeCidOnBlockchain] contract address", address);
   if (!address) {
     throw new Error(`No contract configured for chainId ${chainId}`);
   }
 
   const code = await web3.eth.getCode(address);
+  console.log("[storeCidOnBlockchain] bytecode length", code === "0x" ? 0 : code.length);
   if (code === "0x" || code === "0x0") {
     throw new Error(`No contract deployed at ${address} on chain ${chainId}`);
   }
@@ -50,15 +55,21 @@ const storeCidOnBlockchain = async (vin, cid, chainId) => {
 
   const gasEstimate = await method.estimateGas({ from: accounts[0] });
   const gas = Math.ceil(Number(gasEstimate) * 1.2);
+  console.log("[storeCidOnBlockchain] gas", { estimate: gasEstimate.toString(), withBuffer: gas });
 
+  console.log("[storeCidOnBlockchain] sending tx");
   const tx = await method.send({ from: accounts[0], gas });
+  console.log("[storeCidOnBlockchain] mined", { txHash: tx.transactionHash, blockNumber: tx.blockNumber });
 
   return tx.transactionHash;
 };
 
 export async function handleNFTCreation(carData, chainId) {
+  console.log("[handleNFTCreation] start", { vin: carData?.vinNumber, chainId });
+
   try {
     const validation = validateCarData(carData);
+    console.log("[handleNFTCreation] validation", validation);
     if (!validation.isValid) {
       throw new Error(Object.values(validation.errors).join(", "));
     }
@@ -78,6 +89,7 @@ export async function handleNFTCreation(carData, chainId) {
       },
     };
 
+    console.log("[handleNFTCreation] pinning to IPFS", `${PINATA_BASE}/pinJSONToIPFS`);
     const response = await fetch(
       `${PINATA_BASE}/pinJSONToIPFS`,
       {
@@ -94,6 +106,7 @@ export async function handleNFTCreation(carData, chainId) {
         }),
       }
     );
+    console.log("[handleNFTCreation] pinata response", response.status);
 
     if (!response.ok) {
       const body = await response.text();
@@ -101,7 +114,10 @@ export async function handleNFTCreation(carData, chainId) {
     }
 
     const result = await response.json();
+    console.log("[handleNFTCreation] pinned CID", result.IpfsHash);
+
     const txHash = await storeCidOnBlockchain(carData.vinNumber, result.IpfsHash, chainId);
+    console.log("[handleNFTCreation] success", { ipfsHash: result.IpfsHash, txHash });
 
     return {
       success: true,
@@ -110,7 +126,7 @@ export async function handleNFTCreation(carData, chainId) {
       txHash,
     };
   } catch (error) {
-    console.error("Error handling NFT:", error);
+    console.error("[handleNFTCreation] failed", error);
     return {
       success: false,
       message: error.message,

@@ -149,4 +149,4 @@ Vercel only injects env vars at build time for CRA. After changing one in the da
 - **Secrets in the bundle**: anything prefixed `REACT_APP_` ships to the browser. Use a Pinata JWT scoped to pinning only; rotate if leaked.
 
 ## License
-MIT — see [LICENSE](LICENSE).
+Apache 2.0 — see [LICENSE](LICENSE).

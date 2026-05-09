@@ -1,4 +1,4 @@
-// SPDX-License-Identifier: MIT
+// SPDX-License-Identifier: Apache-2.0
 pragma solidity ^0.8.20;
 
 import "@openzeppelin/contracts/token/ERC721/extensions/ERC721URIStorage.sol";
@@ -19,6 +19,7 @@ contract VinCidRegistry is ERC721URIStorage, Ownable {
     uint256 public rewardAmount;
 
     event CidStored(string vin, string cid, uint256 tokenId);
+    event TokensWithdrawn(address indexed token, address indexed to, uint256 amount);
 
     constructor(address rewardTokenAddress)
         ERC721("VinCidRegistry", "VIN")
@@ -36,24 +37,43 @@ contract VinCidRegistry is ERC721URIStorage, Ownable {
 
         uint256 tokenId = _tokenIdFromVin(vin);
         address currentOwner = _ownerOf(tokenId);
+        bool isNewMint = currentOwner == address(0);
 
-        if (currentOwner == address(0)) {
-            _safeMint(msg.sender, tokenId);
-            vinKeys.push(vin);
-            tokenIdToVin[tokenId] = vin;
-        } else {
+        if (!isNewMint) {
             require(
                 _isAuthorized(currentOwner, msg.sender, tokenId),
                 "Not authorized to update this car"
             );
         }
 
+        // Effects: write all state before any external interaction.
+        if (isNewMint) {
+            vinKeys.push(vin);
+            tokenIdToVin[tokenId] = vin;
+        }
         vinToCid[vin] = cid;
+
+        // Interactions: _safeMint may invoke onERC721Received on a contract receiver.
+        if (isNewMint) {
+            _safeMint(msg.sender, tokenId);
+        }
         _setTokenURI(tokenId, string.concat("ipfs://", cid));
 
         emit CidStored(vin, cid, tokenId);
 
         _payReward(msg.sender);
+    }
+
+    /// @notice Withdraw tokens held by the registry. Use this to recover funds
+    ///         after `setRewardToken` is called or to drain leftover balances.
+    function withdrawToken(IERC20 token, address to, uint256 amount) external onlyOwner {
+        require(to != address(0), "Invalid recipient");
+        // Handle non-standard ERC-20s: succeed if call returns nothing or returns true.
+        (bool ok, bytes memory data) = address(token).call(
+            abi.encodeWithSelector(IERC20.transfer.selector, to, amount)
+        );
+        require(ok && (data.length == 0 || abi.decode(data, (bool))), "Transfer failed");
+        emit TokensWithdrawn(address(token), to, amount);
     }
 
     function getCidByVin(string calldata vin) external view returns (string memory) {
