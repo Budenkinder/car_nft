@@ -35,8 +35,23 @@ const storeCidOnBlockchain = async (vin, cid, chainId) => {
   const web3 = new Web3(window.ethereum);
   const accounts = await web3.eth.getAccounts();
 
-  const contract = new web3.eth.Contract(contractAbi, getContractAddress(chainId));
-  const tx = await contract.methods.storeCid(vin, cid).send({ from: accounts[0] });
+  const address = getContractAddress(chainId);
+  if (!address) {
+    throw new Error(`No contract configured for chainId ${chainId}`);
+  }
+
+  const code = await web3.eth.getCode(address);
+  if (code === "0x" || code === "0x0") {
+    throw new Error(`No contract deployed at ${address} on chain ${chainId}`);
+  }
+
+  const contract = new web3.eth.Contract(contractAbi, address);
+  const method = contract.methods.storeCid(vin, cid);
+
+  const gasEstimate = await method.estimateGas({ from: accounts[0] });
+  const gas = Math.ceil(Number(gasEstimate) * 1.2);
+
+  const tx = await method.send({ from: accounts[0], gas });
 
   return tx.transactionHash;
 };
