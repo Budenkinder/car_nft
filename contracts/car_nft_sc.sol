@@ -23,7 +23,6 @@ contract VinCidRegistry is ERC721URIStorage, Ownable {
 
     constructor(address rewardTokenAddress)
         ERC721("VinCidRegistry", "VIN")
-        Ownable(msg.sender)
     {
         rewardToken = IERC20(rewardTokenAddress);
     }
@@ -41,7 +40,7 @@ contract VinCidRegistry is ERC721URIStorage, Ownable {
 
         if (!isNewMint) {
             require(
-                _isAuthorized(currentOwner, msg.sender, tokenId),
+                _isApprovedOrOwner(msg.sender, tokenId),
                 "Not authorized to update this car"
             );
         }
