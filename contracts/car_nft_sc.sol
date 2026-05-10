@@ -1,9 +1,9 @@
 // SPDX-License-Identifier: Apache-2.0
-pragma solidity ^0.8.20;
+pragma solidity ^0.8.24;
 
-import "@openzeppelin/contracts/token/ERC721/extensions/ERC721URIStorage.sol";
-import "@openzeppelin/contracts/token/ERC20/IERC20.sol";
-import "@openzeppelin/contracts/access/Ownable.sol";
+import "https://raw.githubusercontent.com/OpenZeppelin/openzeppelin-contracts/v4.9.0/contracts/token/ERC721/extensions/ERC721URIStorage.sol";
+import "https://raw.githubusercontent.com/OpenZeppelin/openzeppelin-contracts/v4.9.0/contracts/token/ERC20/IERC20.sol";
+import "https://raw.githubusercontent.com/OpenZeppelin/openzeppelin-contracts/v4.9.0/contracts/access/Ownable.sol";
 
 /// @title VinCidRegistry
 /// @notice One NFT per VIN. The tokenURI points at the latest IPFS CID for the
@@ -23,7 +23,6 @@ contract VinCidRegistry is ERC721URIStorage, Ownable {
 
     constructor(address rewardTokenAddress)
         ERC721("VinCidRegistry", "VIN")
-        Ownable(msg.sender)
     {
         rewardToken = IERC20(rewardTokenAddress);
     }
@@ -41,7 +40,7 @@ contract VinCidRegistry is ERC721URIStorage, Ownable {
 
         if (!isNewMint) {
             require(
-                _isAuthorized(currentOwner, msg.sender, tokenId),
+                _isApprovedOrOwner(msg.sender, tokenId),
                 "Not authorized to update this car"
             );
         }
