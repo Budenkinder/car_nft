@@ -155,6 +155,8 @@ export async function fetchNFTMetadata(cid) {
         model: metadata.attributes.model,
         year: metadata.attributes.year,
         mileage: metadata.attributes.mileage,
+        issueDescription: metadata.attributes.issueDescription,
+        repairShop: metadata.attributes.repairShop,
       },
     };
   } catch (error) {

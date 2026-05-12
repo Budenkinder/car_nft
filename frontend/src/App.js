@@ -134,10 +134,13 @@ function App() {
       if (cid) {
         const metadata = await fetchNFTMetadata(cid);
         if (metadata.success) {
+          setCreateVin(metadata.data.vin || vin);
           setBrand(metadata.data.make || "");
           setModel(metadata.data.model || "");
           setYear(metadata.data.year || "");
           setMileage(metadata.data.mileage || "");
+          setIssue(metadata.data.issueDescription || "");
+          setShop(metadata.data.repairShop || "");
         }
       }
     } catch (error) {
