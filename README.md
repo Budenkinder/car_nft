@@ -1,6 +1,6 @@
 # Car Repair NFT
 
-A dApp that records vehicle repair history on-chain. Each car — identified by its 17-character VIN — gets a single NFT whose `tokenURI` points at the latest IPFS CID for that car's repair metadata. Updating a record rewrites the NFT's URI in place (no new mint), and every successful write pays out an ERC-20 reward (CRT) to the caller.
+A dApp that records vehicle repair history on-chain. Each car — identified by its 17-character VIN — gets a single NFT whose `tokenURI` points at the latest IPFS CID for that car's repair metadata. Only a designated `minter` address (a registry operator, separate from the contract `owner`) may register new VINs; the NFT is assigned to a `recipient` argument (typically the car owner's wallet). Updating a record rewrites the NFT's URI in place (no new mint), and the registry pays out an ERC-20 reward (CRT) to the recipient on the initial mint.
 
 Flow diagram: https://excalidraw.com/#json=zV5wVQt8GJoK-GYiO-DQn,5mQBcgQrwVfJEm3sxA0Dyw
 
@@ -25,10 +25,10 @@ Flow diagram: https://excalidraw.com/#json=zV5wVQt8GJoK-GYiO-DQn,5mQBcgQrwVfJEm3
 
 Write flow:
 
-1. User connects MetaMask (Sepolia) in the frontend.
+1. The **minter** operator (e.g. a registry admin) connects MetaMask (Sepolia) in the frontend. To register a new VIN, the connected wallet must equal the contract's `minter()`.
 2. On submit, the frontend pins a JSON metadata object to IPFS via Pinata and gets back a CID.
-3. The frontend calls `VinCidRegistry.storeCid(vin, cid)`. The first call for a VIN mints its NFT; later calls update the `tokenURI`.
-4. The registry attempts to transfer `rewardAmount` of CRT to the caller (best-effort — silent on failure, so the write still succeeds if funding is empty).
+3. The frontend calls `VinCidRegistry.storeCid(vin, cid, recipient)`. The first call for a VIN mints its NFT to `recipient` (the car owner). Later calls update the `tokenURI` — updates are open in this POC build (anyone can call them).
+4. On mint only, the registry attempts to transfer `rewardAmount` of CRT to the `recipient` (best-effort — silent on failure, so the write still succeeds if funding is empty).
 5. To read history, the UI calls `getCidByVin(vin)` and fetches the JSON from `https://gateway.pinata.cloud/ipfs/<cid>`.
 
 ## Repository layout
@@ -61,9 +61,15 @@ car_nft/
 
 ERC-721 with URI storage. Token id is `uint256(keccak256(bytes(vin)))`, so each VIN maps to exactly one NFT.
 
+Two roles:
+
+- `owner()` — admin (set at deploy via `Ownable`). Configures reward params and the minter.
+- `minter` — registry operator authorized to register new VINs. Set at deploy and changeable by `owner` via `setMinter(address)`. Updates to existing records are open in this POC and do not require either role.
+
 Key functions:
 
-- `storeCid(string vin, string cid)` — mint or update. Requires `vin` length 17 and non-empty `cid`. Updates require `msg.sender` to be the owner or an approved operator. Emits `CidStored(vin, cid, tokenId)` and pays the reward.
+- `storeCid(string vin, string cid, address recipient)` — mint or update. Requires `vin` length 17 and non-empty `cid`. On a new mint, `msg.sender` must be `minter` and `recipient` must be non-zero; the NFT is minted to `recipient` and the CRT reward is paid to `recipient`. On updates, `recipient` is ignored. Emits `CidStored(vin, cid, tokenId)`.
+- `minter() → address` / `setMinter(address)` — read or update the minter (`setMinter` is owner-only). Emits `MinterChanged(previousMinter, newMinter)`.
 - `getCidByVin(string vin) → string` — latest CID for a VIN.
 - `getAllVins() → string[]` / `getAllCidsAsList() → string[]` — enumerate the registry.
 - `setRewardToken(address)` / `setRewardAmount(uint256)` — owner-only configuration.
@@ -77,9 +83,9 @@ Standard OpenZeppelin ERC-20 named `CarRewardToken` (symbol `CRT`). Mints 1,000,
 
 End-to-end walkthrough using Remix + MetaMask. Two contracts, configured in sequence:
 
-> deploy CRT → deploy registry pointing at CRT → set reward amount → fund the registry
+> deploy CRT → deploy registry (pointing at CRT, with initial minter address) → set reward amount → fund the registry
 
-All admin steps run from a single "deployer" account.
+The "deployer" account becomes the contract `owner` (admin). The minter address can be the same as the deployer (simplest, single-wallet demo) or a separate operator wallet (more realistic — see [Roles](#roles)). All admin steps run from the deployer account; only registering new VINs runs from the minter account.
 
 ### Prerequisites
 
@@ -121,10 +127,11 @@ Save the deployed CRT address — you'll paste it into the registry's constructo
 ### 3. Deploy `VinCidRegistry`
 
 - **Contract** dropdown → `VinCidRegistry`
-- Constructor input `_rewardTokenAddress`: paste the **CRT address** from step 2
+- Constructor input `rewardTokenAddress`: paste the **CRT address** from step 2
+- Constructor input `initialMinter`: the wallet address authorized to register new VINs. For a single-wallet demo, paste the **deployer address**. For a two-wallet demo, paste the **operator address** (a different MetaMask account).
 - Click **Deploy** → confirm in MetaMask
 
-The deployer account becomes the registry's `Ownable` admin.
+The deployer account becomes the registry's `Ownable` admin (`owner`); the address you passed as `initialMinter` becomes `minter`.
 
 ```
 CarRewardToken (deployed first)
@@ -132,8 +139,10 @@ CarRewardToken (deployed first)
         ▼
    0xAbC...123  ◀── copy
         │
-        ▼  paste into constructor arg
-VinCidRegistry(0xAbC...123)
+        ▼  paste as rewardTokenAddress
+VinCidRegistry(0xAbC...123, 0xMint...er)
+                            ▲
+                            └── initialMinter
 ```
 
 Sanity checks:
@@ -143,11 +152,14 @@ Sanity checks:
 | `name` | `VinCidRegistry` |
 | `symbol` | `VIN` |
 | `owner` | deployer address |
+| `minter` | the `initialMinter` you passed |
 | `rewardToken` | CRT address from step 2 |
 | `rewardAmount` | `0` *(set in step 4)* |
 | `getAllVins` | `[]` |
 
 Save the deployed registry address. This is what goes into the frontend as `REACT_APP_SMART_CONTRACT_ADDRESS`.
+
+To rotate the minter later (owner-only): call `setMinter(<new minter address>)`. Emits `MinterChanged(previousMinter, newMinter)`.
 
 ### 4. Set the reward amount (owner-only)
 
@@ -172,12 +184,22 @@ Verify with `balanceOf(<registry address>)` → returns `1000000000000000000000`
 
 After ~1000 writes the registry's CRT balance runs out. To refill, the deployer runs another `transfer` from CRT → registry for the desired amount.
 
+### Roles
+
+| Role | Set by | Authority |
+|---|---|---|
+| `owner()` | `Ownable` constructor (= deployer) | Configures `rewardToken`, `rewardAmount`, `minter`. Can `withdrawToken`. |
+| `minter` | Constructor arg `initialMinter` (changeable by `owner` via `setMinter`) | Authorized to register new VINs via `storeCid` (the mint path). |
+| Anyone | — | Can update an existing VIN's CID (POC behavior; lock down later if needed). |
+
 ### Reference deployment (Sepolia)
+
+> The reference addresses below were deployed against the **previous** single-owner-mint contract API. Redeploy after applying this version (the constructor signature changed: `(rewardTokenAddress, initialMinter)`).
 
 | Component | Value |
 |---|---|
-| `CarRewardToken` (CRT) | `0x3c9F25A1547cc647CA6c9A04AA5C5093504BF31f` |
-| `VinCidRegistry` | `0x4eDf03C48FA0F9577e3d90Ff2f933d27D733BB84` |
+| `CarRewardToken` (CRT) | `0x3c9F25A1547cc647CA6c9A04AA5C5093504BF31f` *(reusable as-is)* |
+| `VinCidRegistry` | *redeploy required* |
 | Network | Sepolia (chain ID `11155111`) |
 | Reward per write | 1 CRT |
 | Initial registry funding | 1000 CRT |
@@ -210,9 +232,11 @@ Other scripts: `npm run build`, `npm test`, `npm run clean` (nuke build + node_m
 
 ### Using the app
 
-1. Open the app and click **Connect Wallet**. Approve in MetaMask and switch to Sepolia if prompted.
-2. **Search**: enter a 17-char VIN and click *Load Car NFT*. The app reads the CID from the contract and fetches the metadata from Pinata's gateway.
-3. **Create / update**: fill in VIN, brand, model, year, issue, repair shop, mileage, then *Submit Repair*. The app pins the JSON to IPFS and calls `storeCid`. After confirmation, the tx hash links to Sepolia Etherscan.
+1. Open the app and click **Connect Wallet**. Approve in MetaMask and switch to Sepolia if prompted. The "Create or Update" panel shows the contract's current `minter` address and whether your connected wallet matches.
+2. **Search**: enter a 17-char VIN and click *Load Car NFT*. The app reads the CID from the contract and fetches the metadata from Pinata's gateway. After this call the app knows whether the VIN already exists on-chain (controls which fields/buttons appear next).
+3. **Register a new car (mint)**: the connected wallet must be the **minter**. Fill in VIN, **Car Owner Wallet (recipient)**, brand, model, year, issue, repair shop, mileage, then *Register New Car NFT*. The app pins the JSON to IPFS and calls `storeCid(vin, cid, recipient)`. The NFT lands in the recipient's wallet; the CRT reward is also paid to the recipient.
+4. **Update an existing car**: any connected wallet works (POC behavior). The Recipient field is hidden because the NFT already exists; the update is applied to that VIN's existing NFT. Click *Submit Repair Update*.
+5. After confirmation, the tx hash links to Sepolia Etherscan.
 
 ## Deploying the frontend to Vercel
 
