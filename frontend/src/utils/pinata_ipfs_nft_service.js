@@ -27,8 +27,21 @@ export const getCidFromContract = async (vin) => {
   }
 };
 
-const storeCidOnBlockchain = async (vin, cid, chainId) => {
-  console.log("[storeCidOnBlockchain] start", { vin, cid, chainId });
+export const getMinterAddress = async (chainId) => {
+  try {
+    const web3 = new Web3(window.ethereum);
+    const address = getContractAddress(chainId);
+    if (!address) return null;
+    const contract = new web3.eth.Contract(contractAbi, address);
+    return await contract.methods.minter().call();
+  } catch (error) {
+    console.error("Error fetching minter:", error);
+    return null;
+  }
+};
+
+const storeCidOnBlockchain = async (vin, cid, recipient, chainId) => {
+  console.log("[storeCidOnBlockchain] start", { vin, cid, recipient, chainId });
 
   if (!window.ethereum) {
     throw new Error("Please install MetaMask.");
@@ -51,7 +64,7 @@ const storeCidOnBlockchain = async (vin, cid, chainId) => {
   }
 
   const contract = new web3.eth.Contract(contractAbi, address);
-  const method = contract.methods.storeCid(vin, cid);
+  const method = contract.methods.storeCid(vin, cid, recipient);
 
   const gasEstimate = await method.estimateGas({ from: accounts[0] });
   const gas = Math.ceil(Number(gasEstimate) * 1.2);
@@ -64,14 +77,18 @@ const storeCidOnBlockchain = async (vin, cid, chainId) => {
   return tx.transactionHash;
 };
 
-export async function handleNFTCreation(carData, chainId) {
-  console.log("[handleNFTCreation] start", { vin: carData?.vinNumber, chainId });
+export async function handleNFTCreation(carData, recipient, chainId) {
+  console.log("[handleNFTCreation] start", { vin: carData?.vinNumber, recipient, chainId });
 
   try {
     const validation = validateCarData(carData);
     console.log("[handleNFTCreation] validation", validation);
     if (!validation.isValid) {
       throw new Error(Object.values(validation.errors).join(", "));
+    }
+
+    if (!Web3.utils.isAddress(recipient)) {
+      throw new Error("Recipient must be a valid wallet address");
     }
 
     const metadata = {
@@ -116,7 +133,7 @@ export async function handleNFTCreation(carData, chainId) {
     const result = await response.json();
     console.log("[handleNFTCreation] pinned CID", result.IpfsHash);
 
-    const txHash = await storeCidOnBlockchain(carData.vinNumber, result.IpfsHash, chainId);
+    const txHash = await storeCidOnBlockchain(carData.vinNumber, result.IpfsHash, recipient, chainId);
     console.log("[handleNFTCreation] success", { ipfsHash: result.IpfsHash, txHash });
 
     return {

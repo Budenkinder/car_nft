@@ -1,6 +1,7 @@
-import React, { useState, useCallback } from "react";
+import React, { useState, useCallback, useEffect } from "react";
 import {
   getCidFromContract,
+  getMinterAddress,
   handleNFTCreation,
   fetchNFTMetadata,
 } from "./utils/pinata_ipfs_nft_service";
@@ -48,6 +49,7 @@ function App() {
   const [chainId, setChainId] = useState("");
   const [vin, setVin] = useState("");
   const [createVin, setCreateVin] = useState("");
+  const [recipient, setRecipient] = useState("");
   const [brand, setBrand] = useState("");
   const [model, setModel] = useState("");
   const [year, setYear] = useState("");
@@ -56,15 +58,35 @@ function App() {
   const [mileage, setMileage] = useState("");
   const [txHash, setTxHash] = useState("");
   const [walletAddress, setWalletAddress] = useState("");
+  const [minterAddress, setMinterAddress] = useState("");
   const [errors, setErrors] = useState({});
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [isLoadingNFT, setIsLoadingNFT] = useState(false);
   const [vinLastCid, setVinLastCid] = useState("");
+  const [vinExistsOnChain, setVinExistsOnChain] = useState(false);
 
   const callbackMetaMaskLogin = useCallback((address, newChainId) => {
     setWalletAddress(address);
     setChainId(newChainId);
   }, []);
+
+  useEffect(() => {
+    if (!chainId) return;
+    let cancelled = false;
+    getMinterAddress(chainId).then((addr) => {
+      if (!cancelled) setMinterAddress(addr || "");
+    });
+    return () => {
+      cancelled = true;
+    };
+  }, [chainId]);
+
+  const isConnectedAsMinter =
+    !!walletAddress &&
+    !!minterAddress &&
+    walletAddress.toLowerCase() === minterAddress.toLowerCase();
+  const isNewMint = !vinExistsOnChain;
+  const submitBlocked = isNewMint && !isConnectedAsMinter;
 
   const handleSubmit = async (event) => {
     event.preventDefault();
@@ -88,6 +110,13 @@ function App() {
     if (!issue) newErrors.issue = "Issue description is required";
     if (!shop) newErrors.shop = "Repair shop is required";
     if (!mileage) newErrors.mileage = "Mileage is required";
+    if (isNewMint && !recipient) {
+      newErrors.recipient = "Car owner wallet is required for new registrations";
+    }
+    if (submitBlocked) {
+      newErrors.general =
+        "Only the minter wallet can register a new VIN. Switch MetaMask to the minter account.";
+    }
 
     const validation = validateCarData(carData);
     if (!validation.isValid) {
@@ -102,7 +131,8 @@ function App() {
     setErrors({});
     setIsSubmitting(true);
 
-    const result = await handleNFTCreation(carData, chainId);
+    const recipientForCall = isNewMint ? recipient : walletAddress;
+    const result = await handleNFTCreation(carData, recipientForCall, chainId);
 
     if (result.success) {
       setTxHash(result.txHash);
@@ -130,6 +160,7 @@ function App() {
     try {
       const cid = await getCidFromContract(vin);
       setVinLastCid(cid || "");
+      setVinExistsOnChain(!!cid);
 
       if (cid) {
         const metadata = await fetchNFTMetadata(cid);
@@ -142,6 +173,9 @@ function App() {
           setIssue(metadata.data.issueDescription || "");
           setShop(metadata.data.repairShop || "");
         }
+      } else {
+        // New VIN — clear any stale form state so the operator starts fresh.
+        setCreateVin(vin);
       }
     } catch (error) {
       console.error("Error loading NFT data:", error);
@@ -209,6 +243,18 @@ function App() {
           <Typography variant="h5" gutterBottom>
             Create or Update CAR NFT
           </Typography>
+          {minterAddress && (
+            <Typography
+              variant="body2"
+              color={isConnectedAsMinter ? "success.main" : "text.secondary"}
+              sx={{ mb: 2 }}
+            >
+              Minter: {minterAddress}
+              {isConnectedAsMinter
+                ? " — connected wallet matches (can register new VINs)"
+                : " — connected wallet is NOT the minter (updates only)"}
+            </Typography>
+          )}
           <Stack spacing={2}>
             <TextField
               label="VIN"
@@ -221,6 +267,19 @@ function App() {
                 "Vehicle Identification Number (17 characters)"
               }
             />
+            {isNewMint && (
+              <TextField
+                label="Car Owner Wallet (recipient)"
+                fullWidth
+                value={recipient}
+                onChange={(e) => setRecipient(e.target.value)}
+                error={!!errors.recipient}
+                helperText={
+                  errors.recipient ||
+                  "Wallet address that will receive the NFT (only used on first registration of this VIN)"
+                }
+              />
+            )}
             <TextField
               label="Brand"
               fullWidth
@@ -274,14 +333,22 @@ function App() {
               variant="contained"
               color="primary"
               onClick={handleSubmit}
-              disabled={walletAddress.length === 0 || isSubmitting}
+              disabled={
+                walletAddress.length === 0 || isSubmitting || submitBlocked
+              }
               startIcon={
                 isSubmitting ? (
                   <CircularProgress size={20} color="inherit" />
                 ) : null
               }
             >
-              {isSubmitting ? "Processing..." : "Submit Repair"}
+              {isSubmitting
+                ? "Processing..."
+                : submitBlocked
+                ? "Minter Required to Register New VIN"
+                : isNewMint
+                ? "Register New Car NFT"
+                : "Submit Repair Update"}
             </Button>
           </Stack>
 

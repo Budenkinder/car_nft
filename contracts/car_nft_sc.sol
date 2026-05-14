@@ -7,9 +7,11 @@ import "https://raw.githubusercontent.com/OpenZeppelin/openzeppelin-contracts/v4
 
 /// @title VinCidRegistry
 /// @notice One NFT per VIN. The tokenURI points at the latest IPFS CID for the
-///         car's repair history. Updating a record updates the tokenURI of the
-///         existing NFT (no new mint), and any successful write rewards the
-///         caller with CRT tokens held by this contract.
+///         car's repair history. Only the `minter` (a registry operator address,
+///         separate from the contract `owner`) may mint new VIN NFTs, and the
+///         NFT is assigned to a `recipient` argument supplied by the minter —
+///         typically the car owner's wallet. Updates to an existing record are
+///         open in this POC build.
 contract VinCidRegistry is ERC721URIStorage, Ownable {
     mapping(string => string) private vinToCid;
     mapping(uint256 => string) private tokenIdToVin;
@@ -18,31 +20,41 @@ contract VinCidRegistry is ERC721URIStorage, Ownable {
     IERC20 public rewardToken;
     uint256 public rewardAmount;
 
+    /// @notice Address authorized to mint new VIN NFTs. Separate from `owner()`
+    ///         so a back-office "registry operator" can onboard cars without
+    ///         holding admin powers (or vice versa).
+    address public minter;
+
     event CidStored(string vin, string cid, uint256 tokenId);
     event TokensWithdrawn(address indexed token, address indexed to, uint256 amount);
+    event MinterChanged(address indexed previousMinter, address indexed newMinter);
 
-    constructor(address rewardTokenAddress)
+    constructor(address rewardTokenAddress, address initialMinter)
         ERC721("VinCidRegistry", "VIN")
     {
+        require(initialMinter != address(0), "Minter required");
         rewardToken = IERC20(rewardTokenAddress);
+        minter = initialMinter;
+        emit MinterChanged(address(0), initialMinter);
     }
 
-    /// @notice Mint a new car NFT (first call for a VIN) or update the CID on an
-    ///         existing one. Updates require msg.sender to be the NFT owner or
-    ///         an approved operator.
-    function storeCid(string calldata vin, string calldata cid) external {
+    /// @notice Mint a new car NFT (first call for a VIN) or update the CID on
+    ///         an existing one. Mints are gated to the `minter` address and the
+    ///         NFT is assigned to `recipient`. Updates are open in this POC.
+    /// @param vin       17-character VIN.
+    /// @param cid       IPFS CID for the metadata JSON. Stored as `ipfs://<cid>`.
+    /// @param recipient Wallet that receives the NFT on a new mint. Ignored
+    ///                  on updates (pass `address(0)` if you like — it isn't read).
+    function storeCid(string calldata vin, string calldata cid, address recipient) external {
         require(bytes(vin).length == 17, "VIN must be 17 characters");
         require(bytes(cid).length > 0, "CID required");
 
         uint256 tokenId = _tokenIdFromVin(vin);
-        address currentOwner = _ownerOf(tokenId);
-        bool isNewMint = currentOwner == address(0);
+        bool isNewMint = _ownerOf(tokenId) == address(0);
 
-        if (!isNewMint) {
-            require(
-                _isApprovedOrOwner(msg.sender, tokenId),
-                "Not authorized to update this car"
-            );
+        if (isNewMint) {
+            require(msg.sender == minter, "Only minter can mint");
+            require(recipient != address(0), "Recipient required");
         }
 
         // Effects: write all state before any external interaction.
@@ -54,13 +66,24 @@ contract VinCidRegistry is ERC721URIStorage, Ownable {
 
         // Interactions: _safeMint may invoke onERC721Received on a contract receiver.
         if (isNewMint) {
-            _safeMint(msg.sender, tokenId);
+            _safeMint(recipient, tokenId);
         }
         _setTokenURI(tokenId, string.concat("ipfs://", cid));
 
         emit CidStored(vin, cid, tokenId);
 
-        _payReward(msg.sender);
+        // Rewards only on mint — prevents CRT drain on repeat updates. Paid to
+        // the new NFT holder so the operator (minter) isn't paying themselves.
+        if (isNewMint) {
+            _payReward(recipient);
+        }
+    }
+
+    /// @notice Owner-only: change the minter address.
+    function setMinter(address newMinter) external onlyOwner {
+        require(newMinter != address(0), "Minter required");
+        emit MinterChanged(minter, newMinter);
+        minter = newMinter;
     }
 
     /// @notice Withdraw tokens held by the registry. Use this to recover funds

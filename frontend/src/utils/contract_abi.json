@@ -5,6 +5,11 @@
 				"internalType": "address",
 				"name": "rewardTokenAddress",
 				"type": "address"
+			},
+			{
+				"internalType": "address",
+				"name": "initialMinter",
+				"type": "address"
 			}
 		],
 		"stateMutability": "nonpayable",
@@ -248,6 +253,25 @@
 			{
 				"indexed": true,
 				"internalType": "address",
+				"name": "previousMinter",
+				"type": "address"
+			},
+			{
+				"indexed": true,
+				"internalType": "address",
+				"name": "newMinter",
+				"type": "address"
+			}
+		],
+		"name": "MinterChanged",
+		"type": "event"
+	},
+	{
+		"anonymous": false,
+		"inputs": [
+			{
+				"indexed": true,
+				"internalType": "address",
 				"name": "previousOwner",
 				"type": "address"
 			},
@@ -259,6 +283,31 @@
 			}
 		],
 		"name": "OwnershipTransferred",
+		"type": "event"
+	},
+	{
+		"anonymous": false,
+		"inputs": [
+			{
+				"indexed": true,
+				"internalType": "address",
+				"name": "token",
+				"type": "address"
+			},
+			{
+				"indexed": true,
+				"internalType": "address",
+				"name": "to",
+				"type": "address"
+			},
+			{
+				"indexed": false,
+				"internalType": "uint256",
+				"name": "amount",
+				"type": "uint256"
+			}
+		],
+		"name": "TokensWithdrawn",
 		"type": "event"
 	},
 	{
@@ -406,6 +455,19 @@
 				"internalType": "bool",
 				"name": "",
 				"type": "bool"
+			}
+		],
+		"stateMutability": "view",
+		"type": "function"
+	},
+	{
+		"inputs": [],
+		"name": "minter",
+		"outputs": [
+			{
+				"internalType": "address",
+				"name": "",
+				"type": "address"
 			}
 		],
 		"stateMutability": "view",
@@ -561,6 +623,19 @@
 	{
 		"inputs": [
 			{
+				"internalType": "address",
+				"name": "newMinter",
+				"type": "address"
+			}
+		],
+		"name": "setMinter",
+		"outputs": [],
+		"stateMutability": "nonpayable",
+		"type": "function"
+	},
+	{
+		"inputs": [
+			{
 				"internalType": "uint256",
 				"name": "amount",
 				"type": "uint256"
@@ -595,6 +670,11 @@
 				"internalType": "string",
 				"name": "cid",
 				"type": "string"
+			},
+			{
+				"internalType": "address",
+				"name": "recipient",
+				"type": "address"
 			}
 		],
 		"name": "storeCid",
@@ -685,6 +765,29 @@
 			}
 		],
 		"name": "transferOwnership",
+		"outputs": [],
+		"stateMutability": "nonpayable",
+		"type": "function"
+	},
+	{
+		"inputs": [
+			{
+				"internalType": "contract IERC20",
+				"name": "token",
+				"type": "address"
+			},
+			{
+				"internalType": "address",
+				"name": "to",
+				"type": "address"
+			},
+			{
+				"internalType": "uint256",
+				"name": "amount",
+				"type": "uint256"
+			}
+		],
+		"name": "withdrawToken",
 		"outputs": [],
 		"stateMutability": "nonpayable",
 		"type": "function"
