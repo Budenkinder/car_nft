@@ -2,6 +2,7 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { Button, Typography, Box, CircularProgress } from '@mui/material';
 import PropTypes from 'prop-types';
+import { walletLog } from '../utils/logger';
 
 //functions
 
@@ -20,15 +21,26 @@ const MetaMaskLogin = ({
   const requiredChainId = "0xaa36a7"; // Sepolia testnet
 
   useEffect(() => {
-    if (!window.ethereum) return;
+    if (!window.ethereum) {
+      walletLog.warn("window.ethereum unavailable — MetaMask not detected");
+      return;
+    }
 
     const handleAccountsChanged = async (accounts) => {
       if (!accounts || accounts.length === 0) {
+        walletLog.info("accountsChanged: disconnected", {
+          previous: walletAddressRef.current || null,
+        });
         setWalletAddress("");
         setChainId(null);
         if (onConnect) onConnect("", "");
       } else {
         const currentChainId = await window.ethereum.request({ method: 'eth_chainId' });
+        walletLog.info("accountsChanged: account switched", {
+          previous: walletAddressRef.current || null,
+          current: accounts[0],
+          chainId: currentChainId,
+        });
         setWalletAddress(accounts[0]);
         setChainId(currentChainId);
         if (onConnect) onConnect(accounts[0], currentChainId);
@@ -36,8 +48,14 @@ const MetaMaskLogin = ({
     };
 
     const handleChainChanged = (newChainId) => {
+      const matches = newChainId === requiredChainId;
+      walletLog.info("chainChanged", {
+        chainId: newChainId,
+        required: requiredChainId,
+        matches,
+      });
       setChainId(newChainId);
-      if (newChainId !== requiredChainId) {
+      if (!matches) {
         setError('Wrong network detected. Click to switch.');
       } else {
         setError('');
@@ -52,12 +70,19 @@ const MetaMaskLogin = ({
         const accounts = await window.ethereum.request({ method: 'eth_accounts' });
         if (accounts.length > 0) {
           const currentChainId = await window.ethereum.request({ method: 'eth_chainId' });
+          walletLog.info("checkConnection: existing session", {
+            account: accounts[0],
+            chainId: currentChainId,
+            matches: currentChainId === requiredChainId,
+          });
           setWalletAddress(accounts[0]);
           setChainId(currentChainId);
           if (onConnect) onConnect(accounts[0], currentChainId);
+        } else {
+          walletLog.debug("checkConnection: no existing session");
         }
       } catch (err) {
-        console.error("Error checking existing connection:", err);
+        walletLog.error("checkConnection failed", { error: err.message });
       }
     };
 
@@ -72,12 +97,19 @@ const MetaMaskLogin = ({
   }, [onConnect]);
 
   const switchNetwork = async () => {
+    walletLog.info("switchNetwork:start", { target: requiredChainId });
     try {
       await window.ethereum.request({
         method: 'wallet_switchEthereumChain',
         params: [{ chainId: requiredChainId }],
       });
+      walletLog.info("switchNetwork:success", { target: requiredChainId });
     } catch (err) {
+      walletLog.error("switchNetwork:failed", {
+        target: requiredChainId,
+        code: err.code,
+        message: err.message,
+      });
       if (err.code === 4902) {
         setError('Please add this network to your MetaMask.');
       } else {
@@ -88,10 +120,12 @@ const MetaMaskLogin = ({
 
   const connectWallet = async () => {
     if (!window.ethereum) {
+      walletLog.warn("connectWallet:no_metamask");
       setError('MetaMask is not installed. Please install MetaMask to continue.');
       return;
     }
 
+    walletLog.info("connectWallet:start");
     setIsLoading(true);
     setError('');
 
@@ -99,10 +133,20 @@ const MetaMaskLogin = ({
       const accounts = await window.ethereum.request({ method: 'eth_requestAccounts' });
       const currentChainId = await window.ethereum.request({ method: 'eth_chainId' });
 
+      walletLog.info("connectWallet:success", {
+        account: accounts[0],
+        chainId: currentChainId,
+        matches: currentChainId === requiredChainId,
+      });
+
       setWalletAddress(accounts[0]);
       setChainId(currentChainId);
 
       if (currentChainId !== requiredChainId) {
+        walletLog.warn("connectWallet:wrong_network", {
+          chainId: currentChainId,
+          required: requiredChainId,
+        });
         setError('Please switch to the required network. Click to switch.');
       }
 
@@ -111,11 +155,15 @@ const MetaMaskLogin = ({
       }
     } catch (err) {
       if (err.code === 4001) {
+        walletLog.warn("connectWallet:user_rejected");
         setError('Connection rejected. Please approve the MetaMask connection.');
       } else {
+        walletLog.error("connectWallet:failed", {
+          code: err.code,
+          message: err.message,
+        });
         setError(`Failed to connect: ${err.message || 'Unknown error'}`);
       }
-      console.error(err);
     } finally {
       setIsLoading(false);
     }

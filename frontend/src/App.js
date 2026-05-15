@@ -6,6 +6,7 @@ import {
   fetchNFTMetadata,
 } from "./utils/pinata_ipfs_nft_service";
 import { isValidVIN, validateCarData } from "./utils/validation";
+import { uiLog } from "./utils/logger";
 
 import {
   ThemeProvider,
@@ -66,6 +67,7 @@ function App() {
   const [vinExistsOnChain, setVinExistsOnChain] = useState(false);
 
   const callbackMetaMaskLogin = useCallback((address, newChainId) => {
+    uiLog.debug("wallet callback", { address, chainId: newChainId });
     setWalletAddress(address);
     setChainId(newChainId);
   }, []);
@@ -73,8 +75,12 @@ function App() {
   useEffect(() => {
     if (!chainId) return;
     let cancelled = false;
+    uiLog.debug("fetching minter address", { chainId });
     getMinterAddress(chainId).then((addr) => {
-      if (!cancelled) setMinterAddress(addr || "");
+      if (!cancelled) {
+        uiLog.info("minter resolved", { chainId, minter: addr || null });
+        setMinterAddress(addr || "");
+      }
     });
     return () => {
       cancelled = true;
@@ -90,6 +96,12 @@ function App() {
 
   const handleSubmit = async (event) => {
     event.preventDefault();
+    uiLog.info("submit:click", {
+      vin: createVin,
+      isNewMint,
+      submitBlocked,
+      walletAddress,
+    });
 
     const carData = {
       vinNumber: createVin,
@@ -124,6 +136,9 @@ function App() {
     }
 
     if (Object.keys(newErrors).length > 0) {
+      uiLog.warn("submit:validation_failed", {
+        fields: Object.keys(newErrors),
+      });
       setErrors(newErrors);
       return;
     }
@@ -132,11 +147,18 @@ function App() {
     setIsSubmitting(true);
 
     const recipientForCall = isNewMint ? recipient : walletAddress;
+    uiLog.info("submit:dispatch", {
+      vin: createVin,
+      recipient: recipientForCall,
+      chainId,
+    });
     const result = await handleNFTCreation(carData, recipientForCall, chainId);
 
     if (result.success) {
+      uiLog.info("submit:success", { txHash: result.txHash });
       setTxHash(result.txHash);
     } else {
+      uiLog.error("submit:failed", { message: result.message });
       setErrors({ general: result.message });
     }
 
@@ -144,12 +166,16 @@ function App() {
   };
 
   const handleLoadNFT = async () => {
+    uiLog.info("loadNft:click", { vin });
+
     if (vin.length === 0) {
+      uiLog.warn("loadNft:validation_failed", { reason: "empty_vin" });
       setErrors({ ...errors, vin: "VIN is required to load NFT data" });
       return;
     }
 
     if (!isValidVIN(vin)) {
+      uiLog.warn("loadNft:validation_failed", { reason: "bad_vin_format", vin });
       setErrors({ ...errors, vin: "Invalid VIN format" });
       return;
     }
@@ -163,8 +189,10 @@ function App() {
       setVinExistsOnChain(!!cid);
 
       if (cid) {
+        uiLog.info("loadNft:vin_exists", { vin, cid });
         const metadata = await fetchNFTMetadata(cid);
         if (metadata.success) {
+          uiLog.info("loadNft:metadata_loaded", { vin, cid });
           setCreateVin(metadata.data.vin || vin);
           setBrand(metadata.data.make || "");
           setModel(metadata.data.model || "");
@@ -172,13 +200,20 @@ function App() {
           setMileage(metadata.data.mileage || "");
           setIssue(metadata.data.issueDescription || "");
           setShop(metadata.data.repairShop || "");
+        } else {
+          uiLog.warn("loadNft:metadata_failed", {
+            vin,
+            cid,
+            message: metadata.message,
+          });
         }
       } else {
         // New VIN — clear any stale form state so the operator starts fresh.
+        uiLog.info("loadNft:new_vin", { vin });
         setCreateVin(vin);
       }
     } catch (error) {
-      console.error("Error loading NFT data:", error);
+      uiLog.error("loadNft:failed", { vin, error: error.message });
       setErrors({ ...errors, vin: "Failed to load NFT data for this VIN" });
     } finally {
       setIsLoadingNFT(false);

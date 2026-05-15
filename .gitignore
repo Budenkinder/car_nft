@@ -2,8 +2,9 @@
 node_modules/
 
 # Build output
-
-# commenting build otherwise vercel is not recognising the build folder 
+# Vercel runs `npm run build` from source, so the build folder does not need
+# to be committed. Keep it out of git to avoid leaking REACT_APP_* values
+# (e.g. PINATA_JWT) embedded in the bundle.
 build/
 dist/
 
