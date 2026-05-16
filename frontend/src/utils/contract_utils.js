@@ -4,9 +4,10 @@ import { netLog } from "./logger";
  * Contract addresses for different networks
  */
 export const CONTRACT_ADDRESSES = {
-  // Sepolia testnet 11155111n:0xaa36a7
+  // Sepolia testnet (11155111)
   "0xaa36a7": process.env.REACT_APP_SMART_CONTRACT_ADDRESS,
-  // Add more networks as needed
+  // Hardhat node (31337) — populated from `npx hardhat run scripts/deploy.js --network localhost`
+  "0x7a69": process.env.REACT_APP_SMART_CONTRACT_ADDRESS_LOCAL,
 };
 
 /**
