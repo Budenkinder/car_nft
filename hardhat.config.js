@@ -23,4 +23,13 @@ module.exports = {
     },
   },
   networks,
+  etherscan: {
+    // Etherscan V2 (unified across chains) — one key, no per-network map.
+    apiKey: process.env.ETHERSCAN_API_KEY || "",
+  },
+  sourcify: {
+    // Silence the "Sourcify Skipped" notice. Flip to true if you also want
+    // to verify on https://sourcify.dev.
+    enabled: false,
+  },
 };

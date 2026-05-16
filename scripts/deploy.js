@@ -80,13 +80,24 @@ async function main() {
 
   console.log("\n--- Frontend wiring ---");
   if (network === "localhost" || network === "hardhat") {
-    console.log("Set REACT_APP_SMART_CONTRACT_ADDRESS_LOCAL in frontend/.env to:");
+    const envPath = path.join(__dirname, "..", "frontend", ".env.local");
+    const key = "REACT_APP_SMART_CONTRACT_ADDRESS_LOCAL";
+    const existing = fs.existsSync(envPath) ? fs.readFileSync(envPath, "utf8") : "";
+    const linePattern = new RegExp(`^${key}=.*$`, "m");
+    const next = linePattern.test(existing)
+      ? existing.replace(linePattern, `${key}=${registryAddress}`)
+      : `${existing.replace(/\s+$/, "")}\n${key}=${registryAddress}\n`;
+    fs.writeFileSync(envPath, next);
+    console.log(`Updated ${envPath} (${key}=${registryAddress})`);
+    console.log("Restart the React dev server to pick up the new address.");
   } else if (network === "sepolia") {
-    console.log("Set REACT_APP_SMART_CONTRACT_ADDRESS in frontend/.env to:");
+    console.log("Set the following in Vercel → Project Settings → Environment Variables (Production):");
+    console.log(`  REACT_APP_SMART_CONTRACT_ADDRESS=${registryAddress}`);
+    console.log("Then trigger a redeploy of `main` so the new bundle picks it up.");
   } else {
     console.log(`Add a ${network} entry to frontend/src/utils/contract_utils.js:`);
+    console.log(registryAddress);
   }
-  console.log(registryAddress);
 }
 
 main().catch((error) => {
