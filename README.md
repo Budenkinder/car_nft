@@ -79,130 +79,125 @@ Key functions:
 
 Standard OpenZeppelin ERC-20 named `CarRewardToken` (symbol `CRT`). Mints 1,000,000,000 CRT to the deployer at construction; the owner can `mint(to, amount)` more later.
 
-## Deploying to Sepolia
+## Deploying the smart contracts
 
-End-to-end walkthrough using Remix + MetaMask. Two contracts, configured in sequence:
+The repo ships a Hardhat setup at the root. Two flavors:
 
-> deploy CRT → deploy registry (pointing at CRT, with initial minter address) → set reward amount → fund the registry
+- **Local** — a persistent EVM node on `127.0.0.1:8545` with 20 prefunded test accounts. Fast, free, no faucet needed. Use this for development on the `dev` branch.
+- **Sepolia** — Ethereum's public testnet. Requires a Sepolia RPC endpoint, a funded deployer wallet, and (optionally) an Etherscan API key for source verification. Used for production via `main` → Vercel.
 
-The "deployer" account becomes the contract `owner` (admin). The minter address can be the same as the deployer (simplest, single-wallet demo) or a separate operator wallet (more realistic — see [Roles](#roles)). All admin steps run from the deployer account; only registering new VINs runs from the minter account.
+Both flavors run the same `scripts/deploy.js`: deploy `CarRewardToken`, then `VinCidRegistry`, then fund the registry with CRT and set the per-mint reward.
 
 ### Prerequisites
 
-- MetaMask with ~0.05 Sepolia ETH on the deployer account (faucet: <https://cloud.google.com/application/web3/faucet/ethereum/sepolia>).
-- Both contracts loaded in [Remix](https://remix.ethereum.org).
-- Compiler set to Solidity `0.8.24` or higher (matches `pragma ^0.8.24`).
-- Compile both `car_reward_token.sol` and `car_nft_sc.sol` — green checkmark, no errors.
+One-time install at the repo root:
 
-### 1. Connect Remix to Sepolia
-
-In Remix → **Deploy & Run Transactions**:
-
-- **Environment**: `Injected Provider - MetaMask`
-- **Account**: deployer address with Sepolia ETH
-- The network line below should read `Custom (11155111)` — Sepolia's chain ID
-- In MetaMask itself, confirm the active network is **Sepolia**
-
-### 2. Deploy `CarRewardToken`
-
-CRT goes first because the registry's constructor requires its address.
-
-- **Contract** dropdown → `CarRewardToken`
-- Click **Deploy** → confirm in MetaMask → wait for confirmation
-
-The full 1,000,000,000 CRT supply mints to the deployer account.
-
-Sanity checks (blue / view-only buttons):
-
-| Function | Expected |
-|---|---|
-| `name` | `CarRewardToken` |
-| `symbol` | `CRT` |
-| `decimals` | `18` |
-| `totalSupply` | `1000000000000000000000000000` |
-| `balanceOf(<deployer>)` | same as `totalSupply` |
-
-Save the deployed CRT address — you'll paste it into the registry's constructor next.
-
-### 3. Deploy `VinCidRegistry`
-
-- **Contract** dropdown → `VinCidRegistry`
-- Constructor input `rewardTokenAddress`: paste the **CRT address** from step 2
-- Constructor input `initialMinter`: the wallet address authorized to register new VINs. For a single-wallet demo, paste the **deployer address**. For a two-wallet demo, paste the **operator address** (a different MetaMask account).
-- Click **Deploy** → confirm in MetaMask
-
-The deployer account becomes the registry's `Ownable` admin (`owner`); the address you passed as `initialMinter` becomes `minter`.
-
-```
-CarRewardToken (deployed first)
-        │
-        ▼
-   0xAbC...123  ◀── copy
-        │
-        ▼  paste as rewardTokenAddress
-VinCidRegistry(0xAbC...123, 0xMint...er)
-                            ▲
-                            └── initialMinter
+```bash
+npm install
 ```
 
-Sanity checks:
+Scripts available from the repo root (`package.json`):
 
-| Function | Expected |
+| Command | What it does |
 |---|---|
-| `name` | `VinCidRegistry` |
-| `symbol` | `VIN` |
-| `owner` | deployer address |
-| `minter` | the `initialMinter` you passed |
-| `rewardToken` | CRT address from step 2 |
-| `rewardAmount` | `0` *(set in step 4)* |
-| `getAllVins` | `[]` |
+| `npm run compile` | Compile contracts (output → `artifacts/`) |
+| `npm run node` | Start a persistent local EVM JSON-RPC at `127.0.0.1:8545` (Cancun EVM, chainId `31337`) |
+| `npm run deploy:local` | Deploy to the running local node and auto-write the registry address into [frontend/.env.local](frontend/.env.local) |
+| `npm run deploy:sepolia` | Deploy to Sepolia using credentials from root `.env` |
 
-Save the deployed registry address. This is what goes into the frontend as `REACT_APP_SMART_CONTRACT_ADDRESS`.
+### Configure environment
 
-To rotate the minter later (owner-only): call `setMinter(<new minter address>)`. Emits `MinterChanged(previousMinter, newMinter)`.
+Copy [.env.example](.env.example) to `.env` at the repo root. Leave it empty for local deploys; fill in for Sepolia / verify:
 
-### 4. Set the reward amount (owner-only)
+| Variable | Required for | Notes |
+|---|---|---|
+| `SEPOLIA_RPC_URL` | Sepolia | Alchemy / Infura / QuickNode endpoint |
+| `DEPLOYER_PRIVATE_KEY` | Sepolia | Dedicated test wallet — never reuse a mainnet key |
+| `ETHERSCAN_API_KEY` | `npx hardhat verify` | Free at <https://etherscan.io/myapikey> |
+| `INITIAL_MINTER` | optional | Defaults to deployer address |
+| `REWARD_AMOUNT` | optional (default `10`) | CRT per mint |
+| `REWARD_FUND` | optional (default `1000000`) | CRT pool funded into the registry on deploy |
 
-On `VinCidRegistry` → `setRewardAmount`:
+`.env` is gitignored. Never commit real values.
 
-- `amount`: `1000000000000000000` *(= 1 CRT, since CRT has 18 decimals)*
+### Option 1 — Local deploy (Hardhat, no Sepolia)
 
-Confirm in MetaMask. Verify with `rewardAmount` → returns `1000000000000000000`.
+For day-to-day development. Two terminals from the repo root:
 
-### 5. Fund the registry with CRT
+```bash
+# Terminal 1 — leave running
+npm run node
 
-The registry pays rewards out of its own balance. Without funding, writes still succeed but `_payReward` silently no-ops.
+# Terminal 2 — deploys CRT + registry, funds it
+npm run deploy:local
+```
 
-From the deployer account, on `CarRewardToken` → `transfer`:
+What `deploy:local` does:
 
-- `to`: `<VinCidRegistry address>`
-- `amount`: `1000000000000000000000` *(= 1000 CRT, ~1000 rewards at 1 CRT each)*
+1. Deploys `CarRewardToken` and `VinCidRegistry`.
+2. Transfers `REWARD_FUND` CRT to the registry and sets `rewardAmount`.
+3. Writes a deployment artifact to `deployments/localhost.json` (gitignored, ephemeral).
+4. **Auto-populates** `REACT_APP_SMART_CONTRACT_ADDRESS_LOCAL` in [frontend/.env.local](frontend/.env.local) — no copy-paste needed.
 
-Verify with `balanceOf(<registry address>)` → returns `1000000000000000000000`.
+To use it from the frontend:
 
-### Refilling the registry
+- In MetaMask, add the localhost network: RPC `http://127.0.0.1:8545`, chainId `31337`, currency `ETH`.
+- Import one of the test private keys printed by `npm run node` (account 0 = `0xf39Fd6e5…F92266`, the well-known Hardhat test account).
+- Restart `npm start` in `frontend/` so CRA picks up the new `.env.local` value.
 
-After ~1000 writes the registry's CRT balance runs out. To refill, the deployer runs another `transfer` from CRT → registry for the desired amount.
+State persists for as long as `npm run node` keeps running. Killing the node wipes everything; the next `npm run deploy:local` produces fresh addresses.
+
+> **Warning**: Hardhat's test mnemonic is public knowledge — anyone running `npx hardhat node` gets the same 20 keys. Never use these accounts on any real network.
+
+### Option 2 — Sepolia deploy
+
+Fill in `.env` first (at least `SEPOLIA_RPC_URL` and `DEPLOYER_PRIVATE_KEY`). The deployer wallet needs ~0.05 Sepolia ETH from a faucet:
+
+- <https://www.alchemy.com/faucets/ethereum-sepolia>
+- <https://sepoliafaucet.com>
+
+Then:
+
+```bash
+npm run deploy:sepolia
+```
+
+What `deploy:sepolia` does:
+
+1. Deploys CRT + registry, funds it (same as local).
+2. Writes `deployments/sepolia.json` — **committed** as the team's source of truth for what's currently live.
+3. Prints the registry address to paste into Vercel's UI (see [Deploying the frontend to Vercel](#deploying-the-frontend-to-vercel) below).
+
+### Verifying source on Etherscan (recommended)
+
+Verification unlocks **Read Contract** / **Write Contract** tabs on Etherscan — letting anyone read state and admins run owner-only functions directly from the explorer.
+
+```bash
+# CarRewardToken — no constructor args
+npx hardhat verify --network sepolia <crt-address>
+
+# VinCidRegistry — constructor: (rewardTokenAddress, initialMinter)
+npx hardhat verify --network sepolia <registry-address> <crt-address> <initial-minter-address>
+```
+
+Re-verifying an already-verified contract is a no-op. Requires `ETHERSCAN_API_KEY` in `.env`.
 
 ### Roles
 
 | Role | Set by | Authority |
 |---|---|---|
 | `owner()` | `Ownable` constructor (= deployer) | Configures `rewardToken`, `rewardAmount`, `minter`. Can `withdrawToken`. |
-| `minter` | Constructor arg `initialMinter` (changeable by `owner` via `setMinter`) | Authorized to register new VINs via `storeCid` (the mint path). |
+| `minter` | `INITIAL_MINTER` env var, or deployer if unset (changeable by `owner` via `setMinter`) | Authorized to register new VINs via `storeCid` (the mint path). |
 | Anyone | — | Can update an existing VIN's CID (POC behavior; lock down later if needed). |
 
 ### Reference deployment (Sepolia)
 
-> The reference addresses below were deployed against the **previous** single-owner-mint contract API. Redeploy after applying this version (the constructor signature changed: `(rewardTokenAddress, initialMinter)`).
+The latest live addresses are always in [deployments/sepolia.json](deployments/sepolia.json). Inspect on the explorer:
 
-| Component | Value |
-|---|---|
-| `CarRewardToken` (CRT) | `0x3c9F25A1547cc647CA6c9A04AA5C5093504BF31f` *(reusable as-is)* |
-| `VinCidRegistry` | *redeploy required* |
-| Network | Sepolia (chain ID `11155111`) |
-| Reward per write | 1 CRT |
-| Initial registry funding | 1000 CRT |
+- [CarRewardToken on Sepolia Etherscan](https://sepolia.etherscan.io/address/0x66060BA7061A5A2fB03A52891f5632F411745EFa)
+- [VinCidRegistry on Sepolia Etherscan](https://sepolia.etherscan.io/address/0x13F88B69Ff989037F455618c938fCcE544EeE3A5)
+
+After a redeploy, commit the updated `deployments/sepolia.json` and update `REACT_APP_SMART_CONTRACT_ADDRESS` in Vercel's UI (see Vercel section).
 
 ## Frontend
 
@@ -210,15 +205,18 @@ Stack: React 18 (CRA), Material UI 5, ethers v5, web3 v4, MetaMask provider.
 
 ### Environment variables
 
-Create `frontend/.env`. CRA reads `REACT_APP_*` at build time and inlines them into the bundle, so **do not put truly secret keys here**.
+Copy [frontend/.env.example](frontend/.env.example) to `frontend/.env.local` and fill it in. CRA reads `REACT_APP_*` from `.env.local` at build time and inlines them into the bundle, so **do not put truly secret keys here** — anything `REACT_APP_*` is visible in the browser bundle.
 
 ```
-REACT_APP_SMART_CONTRACT_ADDRESS=<vin-cid-registry-address>   # VinCidRegistry on Sepolia
-REACT_APP_PINATA_JWT=<your-pinata-jwt>                         # Pinata JWT (bearer auth)
-REACT_APP_PINATA_API_URL=https://api.pinata.cloud/pinning     # required
+REACT_APP_PINATA_API_URL=https://api.pinata.cloud/pinning
+REACT_APP_PINATA_JWT=<your-pinata-jwt>
+REACT_APP_SMART_CONTRACT_ADDRESS=<sepolia-registry-address>          # leave empty if not testing against Sepolia from npm start
+REACT_APP_SMART_CONTRACT_ADDRESS_LOCAL=<hardhat-registry-address>    # auto-written by `npm run deploy:local`
 ```
 
-The chain → contract mapping lives in [frontend/src/utils/contract_utils.js](frontend/src/utils/contract_utils.js); only Sepolia (`0xaa36a7`) is wired up. To support another network, add an entry there.
+The chain → contract mapping lives in [frontend/src/utils/contract_utils.js](frontend/src/utils/contract_utils.js): Sepolia (`0xaa36a7`) and Hardhat localhost (`0x7a69`). To support another network, add an entry there.
+
+For production builds on Vercel, **don't ship a `.env.local`** — set the same variables as Project Environment Variables in Vercel's UI instead. See [Deploying the frontend to Vercel](#deploying-the-frontend-to-vercel).
 
 ### Run locally
 
@@ -240,46 +238,65 @@ Other scripts: `npm run build`, `npm test`, `npm run clean` (nuke build + node_m
 
 ## Deploying the frontend to Vercel
 
-The repo already contains [frontend/vercel.json](frontend/vercel.json) with the SPA rewrite needed for client-side routing.
+The repo contains [frontend/vercel.json](frontend/vercel.json):
 
-### Option A — Vercel Dashboard (recommended for first deploy)
+```json
+{
+  "git": { "deploymentEnabled": { "dev": false } },
+  "rewrites": [ { "source": "/(.*)", "destination": "/" } ]
+}
+```
+
+Two things wired here:
+
+1. **Only `main` deploys to Vercel.** The `dev` branch is for local development against a Hardhat node and never goes to Vercel — preview deploys for `dev` would be useless because Vercel can't reach `localhost:8545`.
+2. **SPA rewrite** — every path falls back to `/` so deep-links hit `index.html` and React handles routing.
+
+### One-time setup (Vercel Dashboard)
 
 1. Push the repo to GitHub.
-2. Go to https://vercel.com/new and import the repo.
-3. **Root Directory**: `frontend` (the project lives in a subfolder).
+2. <https://vercel.com/new> → import the repo.
+3. **Root Directory**: `frontend` (the React project lives in a subfolder).
 4. **Framework Preset**: Create React App (auto-detected).
-5. **Build Command**: `npm run build` (default).
-6. **Output Directory**: `build` (default for CRA).
-7. **Environment Variables** — add for *Production*, *Preview*, and *Development*:
-   - `REACT_APP_SMART_CONTRACT_ADDRESS`
-   - `REACT_APP_PINATA_JWT`
-   - `REACT_APP_PINATA_API_URL`
-8. Click **Deploy**. Subsequent pushes to the default branch redeploy automatically; PRs get preview URLs.
+5. **Build / Output**: defaults are fine (`npm run build` → `build/`).
+6. **Environment Variables** — add to the **Production** scope only:
 
-### Option B — Vercel CLI
+   | Variable | Value |
+   |---|---|
+   | `REACT_APP_SMART_CONTRACT_ADDRESS` | Sepolia registry address (from `deployments/sepolia.json`) |
+   | `REACT_APP_PINATA_API_URL` | `https://api.pinata.cloud/pinning` |
+   | `REACT_APP_PINATA_JWT` | Your Pinata JWT |
 
-```
+   Do **not** set `REACT_APP_SMART_CONTRACT_ADDRESS_LOCAL` — production users have no Hardhat node.
+
+7. Click **Deploy**.
+
+Subsequent pushes to `main` redeploy automatically. Pushes to `dev` (or any other branch) do nothing in Vercel.
+
+### Re-deploying after a Sepolia redeploy
+
+When the registry address changes (every `npm run deploy:sepolia`):
+
+1. Update Vercel → Project Settings → Environment Variables → `REACT_APP_SMART_CONTRACT_ADDRESS` (Production scope).
+2. Trigger a fresh build: push any commit to `main`, or **Deployments → ⋯ → Redeploy**. CRA only injects env vars at build time — without a fresh build the bundle keeps the old address.
+3. Commit the updated `deployments/sepolia.json` so the team has the new addresses too.
+
+### Vercel CLI alternative
+
+```bash
 npm i -g vercel
 cd frontend
 vercel login
-vercel             # first run: link the project, pick "frontend" as root
-vercel env add REACT_APP_SMART_CONTRACT_ADDRESS
-vercel env add REACT_APP_PINATA_JWT
-vercel env add REACT_APP_PINATA_API_URL
-vercel --prod      # ship to production
+vercel              # first run: link project, pick "frontend" as root
+vercel env add REACT_APP_SMART_CONTRACT_ADDRESS production
+vercel env add REACT_APP_PINATA_JWT production
+vercel env add REACT_APP_PINATA_API_URL production
+vercel --prod
 ```
 
-### Notes on `vercel.json`
+### A note on `public/_redirects`
 
-```json
-{ "rewrites": [{ "source": "/(.*)", "destination": "/" }] }
-```
-
-Every path rewrites to `/` so deep-links (e.g. `/foo`) hit `index.html` and React handles routing. The `public/_redirects` file is for Netlify and is harmless on Vercel.
-
-### After updating env vars
-
-Vercel only injects env vars at build time for CRA. After changing one in the dashboard, trigger a redeploy (push a commit, or *Redeploy* from the Deployments tab) — otherwise the change won't appear in the bundle.
+That file is the Netlify equivalent of the rewrite. It's harmless on Vercel — the `vercel.json` rewrites take precedence.
 
 ## Troubleshooting
 

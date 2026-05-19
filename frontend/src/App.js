@@ -1,4 +1,4 @@
-import React, { useState, useCallback, useEffect } from "react";
+import React, { useState, useCallback, useEffect, useMemo } from "react";
 import {
   getCidFromContract,
   getMinterAddress,
@@ -22,31 +22,33 @@ import {
   Paper,
   Stack,
   CircularProgress,
+  IconButton,
 } from "@mui/material";
+import Brightness4Icon from "@mui/icons-material/Brightness4";
+import Brightness7Icon from "@mui/icons-material/Brightness7";
 import MetaMaskLogin from "./components/MetaMaskLogin";
-
-const theme = createTheme({
-  palette: {
-    mode: "light",
-    primary: {
-      main: "#6750A4",
-    },
-    secondary: {
-      main: "#625B71",
-    },
-    background: {
-      default: "#FFFBFE",
-    },
-  },
-  typography: {
-    fontFamily: "Roboto, sans-serif",
-    h6: {
-      fontWeight: 600,
-    },
-  },
-});
+import { useThemeMode } from "./theme/ThemeModeContext";
+import { lightPalette, darkPalette } from "./theme/palettes";
 
 function App() {
+  const { mode, toggleMode } = useThemeMode();
+  const theme = useMemo(
+    () =>
+      createTheme({
+        palette: {
+          mode,
+          ...(mode === "light" ? lightPalette : darkPalette),
+        },
+        typography: {
+          fontFamily: "Roboto, sans-serif",
+          h6: {
+            fontWeight: 600,
+          },
+        },
+      }),
+    [mode]
+  );
+
   const [chainId, setChainId] = useState("");
   const [vin, setVin] = useState("");
   const [createVin, setCreateVin] = useState("");
@@ -228,6 +230,14 @@ function App() {
           <Typography variant="h6" sx={{ flexGrow: 1 }}>
             Car Repair NFT
           </Typography>
+          <IconButton
+            onClick={toggleMode}
+            color="inherit"
+            aria-label="Toggle light/dark mode"
+            sx={{ mr: 1 }}
+          >
+            {mode === "light" ? <Brightness4Icon /> : <Brightness7Icon />}
+          </IconButton>
           <MetaMaskLogin
             onConnect={callbackMetaMaskLogin}
             buttonText="Connect Wallet"
