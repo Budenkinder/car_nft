@@ -3,6 +3,16 @@ const fs = require("fs");
 const path = require("path");
 const hre = require("hardhat");
 
+// Upserts `KEY=value` in an env file: replaces the line if present, appends otherwise.
+function upsertEnvVar(envPath, key, value) {
+  const existing = fs.existsSync(envPath) ? fs.readFileSync(envPath, "utf8") : "";
+  const linePattern = new RegExp(`^${key}=.*$`, "m");
+  const next = linePattern.test(existing)
+    ? existing.replace(linePattern, `${key}=${value}`)
+    : `${existing.replace(/\s+$/, "")}\n${key}=${value}\n`;
+  fs.writeFileSync(envPath, next);
+}
+
 async function main() {
   const network = hre.network.name;
   const { chainId } = await hre.ethers.provider.getNetwork();
@@ -79,25 +89,56 @@ async function main() {
   }
 
   console.log("\n--- Frontend wiring ---");
+  const envPath = path.join(__dirname, "..", "frontend", ".env.local");
   if (network === "localhost" || network === "hardhat") {
-    const envPath = path.join(__dirname, "..", "frontend", ".env.local");
     const key = "REACT_APP_SMART_CONTRACT_ADDRESS_LOCAL";
-    const existing = fs.existsSync(envPath) ? fs.readFileSync(envPath, "utf8") : "";
-    const linePattern = new RegExp(`^${key}=.*$`, "m");
-    const next = linePattern.test(existing)
-      ? existing.replace(linePattern, `${key}=${registryAddress}`)
-      : `${existing.replace(/\s+$/, "")}\n${key}=${registryAddress}\n`;
-    fs.writeFileSync(envPath, next);
+    upsertEnvVar(envPath, key, registryAddress);
     console.log(`Updated ${envPath} (${key}=${registryAddress})`);
     console.log("Restart the React dev server to pick up the new address.");
   } else if (network === "sepolia") {
-    console.log("Set the following in Vercel → Project Settings → Environment Variables (Production):");
+    const key = "REACT_APP_SMART_CONTRACT_ADDRESS";
+    upsertEnvVar(envPath, key, registryAddress);
+    console.log(`Updated ${envPath} (${key}=${registryAddress})`);
+    console.log("Restart the React dev server to pick up the new address.");
+    console.log(
+      "\nFor production, also set in Vercel → Project Settings → Environment Variables (Production):"
+    );
     console.log(`  REACT_APP_SMART_CONTRACT_ADDRESS=${registryAddress}`);
     console.log("Then trigger a redeploy of `main` so the new bundle picks it up.");
   } else {
     console.log(`Add a ${network} entry to frontend/src/utils/contract_utils.js:`);
     console.log(registryAddress);
   }
+
+  // Sync the frontend ABI from the freshly compiled VinCidRegistry artifact, so
+  // the UI's ABI never drifts from the deployed contract. Runs on every network.
+  console.log("\n--- Frontend ABI sync ---");
+  const abiSrc = path.join(
+    __dirname,
+    "..",
+    "artifacts",
+    "contracts",
+    "car_nft_sc.sol",
+    "VinCidRegistry.json"
+  );
+  if (!fs.existsSync(abiSrc)) {
+    console.error(
+      `Compiled artifact not found at ${abiSrc}.\nRun \`npm run compile\` before deploying.`
+    );
+    process.exitCode = 1;
+    return;
+  }
+  const abiDest = path.join(
+    __dirname,
+    "..",
+    "frontend",
+    "src",
+    "utils",
+    "contract_abi.json"
+  );
+  const { abi } = JSON.parse(fs.readFileSync(abiSrc, "utf8"));
+  fs.writeFileSync(abiDest, JSON.stringify(abi, null, 2) + "\n");
+  console.log(`Updated ${abiDest}`);
 }
 
 main().catch((error) => {

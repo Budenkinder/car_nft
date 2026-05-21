@@ -46,6 +46,31 @@ export const getMinterAddress = async (chainId) => {
   }
 };
 
+// Reads every registered NFT off the registry and returns [{ vin, cid }] rows.
+// getAllVins() and getAllCidsAsList() are index-aligned on-chain (both built
+// from the same `vinKeys` array), so zipping them by index is safe.
+export const getAllRegisteredNfts = async (chainId) => {
+  netLog.debug("getAllRegisteredNfts:start", { chainId });
+  try {
+    const web3 = new Web3(window.ethereum);
+    const address = getContractAddress(chainId);
+    if (!address) return [];
+
+    const contract = new web3.eth.Contract(contractAbi, address);
+    const [vins, cids] = await Promise.all([
+      contract.methods.getAllVins().call(),
+      contract.methods.getAllCidsAsList().call(),
+    ]);
+
+    const list = vins.map((vin, i) => ({ vin, cid: cids[i] }));
+    netLog.info("getAllRegisteredNfts:done", { chainId, count: list.length });
+    return list;
+  } catch (error) {
+    netLog.error("getAllRegisteredNfts:failed", { chainId, error: error.message });
+    return [];
+  }
+};
+
 const storeCidOnBlockchain = async (vin, cid, recipient, chainId) => {
   txLog.info("storeCid:start", { vin, cid, recipient, chainId });
 
