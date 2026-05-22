@@ -9,6 +9,9 @@ Format: `- YYYY-MM-DD — [Title](YYYY-MM-DD-NNN-slug.md) — scope: <frontend|c
 
 ## Entries
 
+- 2026-05-21 — [Plan 0006 transitioned in-progress → done; ADR 0006 bumped proposed → accepted](2026-05-21-009-plan-0006-in-progress-to-done.md) — scope: contracts — status: accepted
+- 2026-05-21 — [Plan 0006 transitioned draft → in-progress](2026-05-21-008-plan-0006-draft-to-in-progress.md) — scope: contracts — status: accepted
+- 2026-05-21 — [Sepolia deploys write a dated address log to docs/deployments/](2026-05-21-007-sepolia-deploy-address-log.md) — scope: contracts — status: proposed
 - 2026-05-21 — [Plan 0005 transitioned in-progress → done; ADR 0005 bumped proposed → accepted](2026-05-21-006-plan-0005-in-progress-to-done.md) — scope: both — status: accepted
 - 2026-05-21 — [Plan 0005 transitioned draft → in-progress](2026-05-21-005-plan-0005-draft-to-in-progress.md) — scope: both — status: accepted
 - 2026-05-21 — [deploy.js syncs the frontend (contract address + ABI) on every deploy](2026-05-21-004-deploy-script-frontend-sync.md) — scope: both — status: accepted

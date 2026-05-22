@@ -110,6 +110,35 @@ async function main() {
     console.log(registryAddress);
   }
 
+  // Sepolia deploy log: a dated, human-readable record of the deployed addresses
+  // with Etherscan links, under docs/deployments/. Same-day re-deploys overwrite.
+  if (network === "sepolia") {
+    console.log("\n--- Sepolia deploy log ---");
+    const date = artifact.deployedAt.slice(0, 10);
+    const etherscan = (addr) => `https://sepolia.etherscan.io/address/${addr}`;
+    const logDir = path.join(__dirname, "..", "docs", "deployments");
+    fs.mkdirSync(logDir, { recursive: true });
+    const logPath = path.join(
+      logDir,
+      `sepolia_contract_deploy_addresses_${date}.md`
+    );
+    const logBody = `# Sepolia Contract Deployment — ${date}
+
+- **Network:** ${network} (chainId ${artifact.chainId})
+- **Deployer:** ${artifact.deployer}
+- **Deployed at:** ${artifact.deployedAt}
+
+## Contract Addresses
+
+| Contract | Address (click for Etherscan) |
+|----------|-------------------------------|
+| VinCidRegistry | [\`${registryAddress}\`](${etherscan(registryAddress)}) |
+| CarRewardToken | [\`${rewardTokenAddress}\`](${etherscan(rewardTokenAddress)}) |
+`;
+    fs.writeFileSync(logPath, logBody);
+    console.log(`Wrote ${logPath}`);
+  }
+
   // Sync the frontend ABI from the freshly compiled VinCidRegistry artifact, so
   // the UI's ABI never drifts from the deployed contract. Runs on every network.
   console.log("\n--- Frontend ABI sync ---");
