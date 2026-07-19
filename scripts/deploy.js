@@ -1,7 +1,10 @@
-require("dotenv").config();
-const fs = require("fs");
-const path = require("path");
-const hre = require("hardhat");
+import "dotenv/config";
+import fs from "fs";
+import path from "path";
+import { fileURLToPath } from "url";
+import { network } from "hardhat";
+
+const __dirname = path.dirname(fileURLToPath(import.meta.url));
 
 // Upserts `KEY=value` in an env file: replaces the line if present, appends otherwise.
 function upsertEnvVar(envPath, key, value) {
@@ -14,18 +17,18 @@ function upsertEnvVar(envPath, key, value) {
 }
 
 async function main() {
-  const network = hre.network.name;
-  const { chainId } = await hre.ethers.provider.getNetwork();
-  const [deployer] = await hre.ethers.getSigners();
-  const balance = await hre.ethers.provider.getBalance(deployer.address);
+  const { ethers, networkName } = await network.create();
+  const { chainId } = await ethers.provider.getNetwork();
+  const [deployer] = await ethers.getSigners();
+  const balance = await ethers.provider.getBalance(deployer.address);
 
-  console.log("Network: ", network, "(chainId:", chainId.toString() + ")");
+  console.log("Network: ", networkName, "(chainId:", chainId.toString() + ")");
   console.log("Deployer:", deployer.address);
-  console.log("Balance: ", hre.ethers.formatEther(balance), "ETH");
+  console.log("Balance: ", ethers.formatEther(balance), "ETH");
 
   // 1. Deploy the ERC-20 reward token (no constructor args).
   console.log("\nDeploying CarRewardToken...");
-  const CarRewardToken = await hre.ethers.getContractFactory("CarRewardToken");
+  const CarRewardToken = await ethers.getContractFactory("CarRewardToken");
   const rewardToken = await CarRewardToken.deploy();
   await rewardToken.waitForDeployment();
   const rewardTokenAddress = await rewardToken.getAddress();
@@ -36,7 +39,7 @@ async function main() {
   console.log("\nDeploying VinCidRegistry...");
   console.log("  rewardToken:  ", rewardTokenAddress);
   console.log("  initialMinter:", initialMinter);
-  const VinCidRegistry = await hre.ethers.getContractFactory("VinCidRegistry");
+  const VinCidRegistry = await ethers.getContractFactory("VinCidRegistry");
   const registry = await VinCidRegistry.deploy(rewardTokenAddress, initialMinter);
   await registry.waitForDeployment();
   const registryAddress = await registry.getAddress();
@@ -45,7 +48,7 @@ async function main() {
   // 3. Persist addresses BEFORE the funding step — so a funding failure does
   //    not strand the deployed addresses in console output only.
   const artifact = {
-    network,
+    network: networkName,
     chainId: chainId.toString(),
     deployer: deployer.address,
     rewardToken: rewardTokenAddress,
@@ -55,7 +58,7 @@ async function main() {
   };
   const dir = path.join(__dirname, "..", "deployments");
   fs.mkdirSync(dir, { recursive: true });
-  const artifactPath = path.join(dir, `${network}.json`);
+  const artifactPath = path.join(dir, `${networkName}.json`);
   fs.writeFileSync(artifactPath, JSON.stringify(artifact, null, 2));
   console.log("\nDeployment artifact written:", artifactPath);
 
@@ -68,8 +71,8 @@ async function main() {
     console.log("\nSkipping reward funding (REWARD_AMOUNT or REWARD_FUND = 0).");
   } else {
     try {
-      const rewardAmount = hre.ethers.parseUnits(rewardAmountStr, 18);
-      const fundAmount = hre.ethers.parseUnits(fundAmountStr, 18);
+      const rewardAmount = ethers.parseUnits(rewardAmountStr, 18);
+      const fundAmount = ethers.parseUnits(fundAmountStr, 18);
       console.log(
         `\nFunding registry: ${fundAmountStr} CRT pool, ${rewardAmountStr} CRT/mint...`
       );
@@ -90,12 +93,12 @@ async function main() {
 
   console.log("\n--- Frontend wiring ---");
   const envPath = path.join(__dirname, "..", "frontend", ".env.local");
-  if (network === "localhost" || network === "hardhat") {
+  if (networkName === "localhost" || networkName === "hardhat") {
     const key = "REACT_APP_SMART_CONTRACT_ADDRESS_LOCAL";
     upsertEnvVar(envPath, key, registryAddress);
     console.log(`Updated ${envPath} (${key}=${registryAddress})`);
     console.log("Restart the React dev server to pick up the new address.");
-  } else if (network === "sepolia") {
+  } else if (networkName === "sepolia") {
     const key = "REACT_APP_SMART_CONTRACT_ADDRESS";
     upsertEnvVar(envPath, key, registryAddress);
     console.log(`Updated ${envPath} (${key}=${registryAddress})`);
@@ -106,13 +109,13 @@ async function main() {
     console.log(`  REACT_APP_SMART_CONTRACT_ADDRESS=${registryAddress}`);
     console.log("Then trigger a redeploy of `main` so the new bundle picks it up.");
   } else {
-    console.log(`Add a ${network} entry to frontend/src/utils/contract_utils.js:`);
+    console.log(`Add a ${networkName} entry to frontend/src/utils/contract_utils.js:`);
     console.log(registryAddress);
   }
 
   // Sepolia deploy log: a dated, human-readable record of the deployed addresses
   // with Etherscan links, under docs/deployments/. Same-day re-deploys overwrite.
-  if (network === "sepolia") {
+  if (networkName === "sepolia") {
     console.log("\n--- Sepolia deploy log ---");
     const date = artifact.deployedAt.slice(0, 10);
     const etherscan = (addr) => `https://sepolia.etherscan.io/address/${addr}`;
@@ -124,7 +127,7 @@ async function main() {
     );
     const logBody = `# Sepolia Contract Deployment — ${date}
 
-- **Network:** ${network} (chainId ${artifact.chainId})
+- **Network:** ${networkName} (chainId ${artifact.chainId})
 - **Deployer:** ${artifact.deployer}
 - **Deployed at:** ${artifact.deployedAt}
 

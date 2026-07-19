@@ -55,6 +55,16 @@ car_nft/
     └── vercel.json             # SPA rewrite for Vercel
 ```
 
+## Development environment
+
+The repo includes a [VS Code Dev Container](.devcontainer/devcontainer.json) (also usable as a GitHub Codespace). Opening the repo in it provisions:
+
+- Base image `mcr.microsoft.com/devcontainers/base:ubuntu-24.04`, Node 22, zsh (as the default shell), and the GitHub CLI.
+- VS Code extensions: ESLint, Solidity (`JuanBlanco.solidity`), Prettier (with format-on-save enabled).
+- Port `3000` auto-forwarded and opened in a browser for the CRA dev server.
+
+`postCreateCommand` only runs `npm install` inside `frontend/`. It does **not** install the root-level dependencies (Hardhat, OpenZeppelin, etc.), so after the container finishes building, run `npm install` once at the repo root before using any of the `npm run compile` / `npm run node` / `npm run deploy:*` scripts below.
+
 ## Smart contracts
 
 ### `VinCidRegistry` ([contracts/car_nft_sc.sol](contracts/car_nft_sc.sol))
@@ -87,6 +97,8 @@ The repo ships a Hardhat setup at the root. Two flavors:
 - **Sepolia** — Ethereum's public testnet. Requires a Sepolia RPC endpoint, a funded deployer wallet, and (optionally) an Etherscan API key for source verification. Used for production via `main` → Vercel.
 
 Both flavors run the same `scripts/deploy.js`: deploy `CarRewardToken`, then `VinCidRegistry`, then fund the registry with CRT and set the per-mint reward.
+
+The root project runs on **Hardhat 3** as an ESM package (`"type": "module"` in `package.json`) — `hardhat.config.js` and `scripts/deploy.js` use `import`/`export`, not `require`/`module.exports`. The plugin bundle is `@nomicfoundation/hardhat-toolbox-mocha-ethers` (ethers + Mocha stack). `npm run compile` also generates a `types/` directory (TypeChain bindings); like `artifacts/`/`cache/`, it's regenerated on every compile and gitignored.
 
 ### Prerequisites
 

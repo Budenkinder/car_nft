@@ -1,18 +1,20 @@
-require("@nomicfoundation/hardhat-toolbox");
-require("dotenv").config();
+import "dotenv/config";
+import hardhatToolboxMochaEthersPlugin from "@nomicfoundation/hardhat-toolbox-mocha-ethers";
+import { configVariable, defineConfig } from "hardhat/config";
 
 const networks = {};
 if (process.env.SEPOLIA_RPC_URL) {
   networks.sepolia = {
-    url: process.env.SEPOLIA_RPC_URL,
+    type: "http",
+    url: configVariable("SEPOLIA_RPC_URL"),
     accounts: process.env.DEPLOYER_PRIVATE_KEY
-      ? [process.env.DEPLOYER_PRIVATE_KEY]
+      ? [configVariable("DEPLOYER_PRIVATE_KEY")]
       : [],
   };
 }
 
-/** @type import('hardhat/config').HardhatUserConfig */
-module.exports = {
+export default defineConfig({
+  plugins: [hardhatToolboxMochaEthersPlugin],
   solidity: {
     version: "0.8.28",
     settings: {
@@ -23,13 +25,10 @@ module.exports = {
     },
   },
   networks,
-  etherscan: {
-    // Etherscan V2 (unified across chains) — one key, no per-network map.
-    apiKey: process.env.ETHERSCAN_API_KEY || "",
+  verify: {
+    etherscan: {
+      // Etherscan V2 (unified across chains) — one key, no per-network map.
+      apiKey: configVariable("ETHERSCAN_API_KEY"),
+    },
   },
-  sourcify: {
-    // Silence the "Sourcify Skipped" notice. Flip to true if you also want
-    // to verify on https://sourcify.dev.
-    enabled: false,
-  },
-};
+});

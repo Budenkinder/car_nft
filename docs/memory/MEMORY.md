@@ -16,5 +16,6 @@ Format: `- [Title](relative/path.md) — one-line hook`
 
 ## Contracts (`docs/memory/contracts/`)
 
+- [Hardhat 3 + ESM migration](contracts/hardhat-3-esm-migration.md) — project runs Hardhat 3/ESM; use `hardhat-toolbox-mocha-ethers` (never plain `hardhat-toolbox`, it's a dead shim); config/scripts use `defineConfig`/`network.create()`/`configVariable`.
 - [deploy.js auto-syncs the frontend](contracts/deploy-syncs-frontend.md) — every deploy writes the contract address to `.env.local` and the ABI to `contract_abi.json`; treat `contract_abi.json` as generated.
 - [Sepolia deploys write a dated address log](contracts/sepolia-deploy-log.md) — every Sepolia deploy generates `docs/deployments/sepolia_contract_deploy_addresses_<date>.md`; treat `docs/deployments/` as generated.
