@@ -9,6 +9,10 @@ Format: `- YYYY-MM-DD — [Title](YYYY-MM-DD-NNN-slug.md) — scope: <frontend|c
 
 ## Entries
 
+- 2026-07-20 — [Plan 0012 transitioned in-progress → done; ADR 0012 bumped proposed → accepted](2026-07-20-004-plan-0012-in-progress-to-done.md) — scope: both — status: accepted
+- 2026-07-20 — [Plan 0012 transitioned draft → in-progress](2026-07-20-003-plan-0012-draft-to-in-progress.md) — scope: both — status: accepted
+- 2026-07-20 — [Plan 0011 transitioned in-progress → done; ADR 0011 bumped proposed → accepted](2026-07-20-002-plan-0011-in-progress-to-done.md) — scope: both — status: accepted
+- 2026-07-20 — [Plan 0011 transitioned draft → in-progress](2026-07-20-001-plan-0011-draft-to-in-progress.md) — scope: both — status: accepted
 - 2026-07-19 — [Correct the diagnosis: "No contracts to compile" is normal Hardhat 3 behavior, not a cache bug](2026-07-19-008-correct-no-contracts-to-compile-diagnosis.md) — scope: contracts — status: accepted
 - 2026-07-19 — [Fix "No contracts to compile" by clearing the stale cross-version Hardhat cache](2026-07-19-007-stale-hardhat-cache-no-contracts-to-compile.md) — scope: contracts — status: superseded
 - 2026-07-19 — [Plan 0008 transitioned in-progress → done; ADR 0008 bumped proposed → accepted](2026-07-19-006-plan-0008-in-progress-to-done.md) — scope: both — status: accepted

@@ -13,9 +13,10 @@
 
   "postCreateCommand": "cd frontend && npm install",
 
-  "forwardPorts": [3000],
+  "forwardPorts": [3000, 8545],
   "portsAttributes": {
-    "3000": { "label": "React dev server", "onAutoForward": "openBrowser" }
+    "3000": { "label": "React dev server", "onAutoForward": "openBrowser" },
+    "8545": { "label": "Hardhat local node", "onAutoForward": "silent" }
   },
 
   "remoteUser": "vscode",

@@ -157,6 +157,8 @@ To use it from the frontend:
 - Import one of the test private keys printed by `npm run node` (account 0 = `0xf39Fd6e5…F92266`, the well-known Hardhat test account).
 - Restart `npm start` in `frontend/` so CRA picks up the new `.env.local` value.
 
+> **Dev Container / Codespaces users:** MetaMask runs in your browser on the host machine, not inside the container, so it can only reach `127.0.0.1:8545` if that port is forwarded out of the container — already configured in [.devcontainer/devcontainer.json](.devcontainer/devcontainer.json). If the container was already running before this was added, reload the window ("Dev Containers: Reload Window") so the new forwarded port takes effect.
+
 State persists for as long as `npm run node` keeps running. Killing the node wipes everything; the next `npm run deploy:local` produces fresh addresses.
 
 > **Warning**: Hardhat's test mnemonic is public knowledge — anyone running `npx hardhat node` gets the same 20 keys. Never use these accounts on any real network.
@@ -214,6 +216,8 @@ After a redeploy, commit the updated `deployments/sepolia.json` and update `REAC
 ## Frontend
 
 Stack: React 18 (CRA), Material UI 5, ethers v5, web3 v4, MetaMask provider.
+
+> `ethers` is listed in `frontend/package.json` but is currently **unused** — all contract reads/writes go through `web3` (see [frontend/src/utils/pinata_ipfs_nft_service.js](frontend/src/utils/pinata_ipfs_nft_service.js)). No file under `frontend/src/` imports `ethers`.
 
 ### Environment variables
 
@@ -317,6 +321,7 @@ That file is the Netlify equivalent of the rewrite. It's harmless on Vercel — 
 - **`Pinata 401/403`** — invalid, expired, or under-scoped Pinata JWT. The error surfaces the response body — check it for the exact reason.
 - **Reward not received** — registry's CRT balance is empty, or `rewardAmount` is `0`. The write itself still succeeded.
 - **Secrets in the bundle** — anything prefixed `REACT_APP_` ships to the browser. Scope the Pinata JWT to pinning only, and rotate if leaked.
+- **`No contracts to compile`** — this is Hardhat 3's normal "already up to date" message, not an error: it means every `.sol` file under `contracts/` already has a valid cached build, not that contracts weren't found. To force a full rebuild anyway (e.g. after a compiler/plugin change), run `npx hardhat clean && npm run compile`.
 
 ## License
 
