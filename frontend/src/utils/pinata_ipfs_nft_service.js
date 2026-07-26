@@ -6,6 +6,36 @@ import { netLog, txLog } from "./logger";
 
 const PINATA_BASE = process.env.REACT_APP_PINATA_API_URL.replace(/\/+$/, "");
 
+// Best-effort compensating action: removes a pin that was created but never
+// got referenced on-chain (e.g. the mint that should have followed it
+// failed). Never throws — a failed unpin must not mask the mint error that
+// triggered it.
+const unpinFromIPFS = async (cid) => {
+  netLog.debug("pinata:unpin:start", { cid });
+  try {
+    const response = await fetch(`${PINATA_BASE}/unpin/${cid}`, {
+      method: "DELETE",
+      headers: {
+        Authorization: `Bearer ${process.env.REACT_APP_PINATA_JWT}`,
+      },
+    });
+    if (!response.ok) {
+      const body = await response.text();
+      netLog.error("pinata:unpin:failed", {
+        cid,
+        status: response.status,
+        bodyExcerpt: (body || "").slice(0, 200),
+      });
+      return false;
+    }
+    netLog.info("pinata:unpin:done", { cid });
+    return true;
+  } catch (error) {
+    netLog.error("pinata:unpin:failed", { cid, message: error.message });
+    return false;
+  }
+};
+
 export const getCidFromContract = async (vin) => {
   netLog.debug("getCidFromContract:start", { vin });
   try {
@@ -204,12 +234,20 @@ export async function handleNFTCreation(carData, recipient, chainId) {
       tookMs: Date.now() - pinStartedAt,
     });
 
-    const txHash = await storeCidOnBlockchain(
-      carData.vinNumber,
-      result.IpfsHash,
-      recipient,
-      chainId
-    );
+    let txHash;
+    try {
+      txHash = await storeCidOnBlockchain(
+        carData.vinNumber,
+        result.IpfsHash,
+        recipient,
+        chainId
+      );
+    } catch (mintError) {
+      // The pin above succeeded but nothing on-chain will ever reference it —
+      // clean it up instead of leaving a permanent orphaned IPFS entry.
+      await unpinFromIPFS(result.IpfsHash);
+      throw mintError;
+    }
     txLog.info("handleNFTCreation:success", {
       ipfsHash: result.IpfsHash,
       txHash,

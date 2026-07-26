@@ -9,6 +9,7 @@ Format: `- YYYY-MM-DD — [Title](YYYY-MM-DD-NNN-slug.md) — scope: <frontend|c
 
 ## Entries
 
+- 2026-07-26 — [Compensating unpin when on-chain mint fails after a successful IPFS pin](2026-07-26-011-unpin-ipfs-on-mint-failure.md) — scope: frontend — status: accepted
 - 2026-07-26 — [Plan 0017 transitioned in-progress → done](2026-07-26-010-plan-0017-in-progress-to-done.md) — scope: both — status: accepted
 - 2026-07-26 — [Plan 0017 transitioned draft → in-progress](2026-07-26-009-plan-0017-draft-to-in-progress.md) — scope: both — status: accepted
 - 2026-07-26 — [Commit generated README.md PDF export under docs/](2026-07-26-008-readme-pdf-export.md) — scope: both — status: accepted
