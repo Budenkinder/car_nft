@@ -13,6 +13,7 @@ Format: `- [Title](relative/path.md) — one-line hook`
 
 - [Plans live in status-named subfolders](frontend/plan-status-folders.md) — draft/approved/in-progress/done/rejected; both plans in a trio move together when status changes (per ADR 0002).
 - [Contract access uses web3.js + a service layer](frontend/web3js-contract-access-pattern.md) — frontend uses web3.js not ethers; all reads/writes funnel through pinata_ipfs_nft_service.js.
+- [Pinata: only the JWT is a real credential](frontend/pinata-jwt-only-credential.md) — REACT_APP_PINATA_JWT is the only Pinata secret read anywhere in the codebase; API Key/Secret have no reader.
 
 ## Contracts (`docs/memory/contracts/`)
 

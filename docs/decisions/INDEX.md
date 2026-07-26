@@ -9,6 +9,18 @@ Format: `- YYYY-MM-DD — [Title](YYYY-MM-DD-NNN-slug.md) — scope: <frontend|c
 
 ## Entries
 
+- 2026-07-26 — [Plan 0017 transitioned in-progress → done](2026-07-26-010-plan-0017-in-progress-to-done.md) — scope: both — status: accepted
+- 2026-07-26 — [Plan 0017 transitioned draft → in-progress](2026-07-26-009-plan-0017-draft-to-in-progress.md) — scope: both — status: accepted
+- 2026-07-26 — [Commit generated README.md PDF export under docs/](2026-07-26-008-readme-pdf-export.md) — scope: both — status: accepted
+- 2026-07-26 — [Plan 0016 transitioned in-progress → done](2026-07-26-007-plan-0016-in-progress-to-done.md) — scope: both — status: accepted
+- 2026-07-26 — [Plan 0016 transitioned draft → in-progress](2026-07-26-006-plan-0016-draft-to-in-progress.md) — scope: both — status: accepted
+- 2026-07-26 — [Document Hardhat ETH-vs-NFT visibility in README](2026-07-26-005-readme-hardhat-nft-visibility.md) — scope: both — status: accepted
+- 2026-07-26 — [Plan 0015 transitioned in-progress → done](2026-07-26-004-plan-0015-in-progress-to-done.md) — scope: both — status: accepted
+- 2026-07-26 — [Plan 0015 transitioned draft → in-progress](2026-07-26-003-plan-0015-draft-to-in-progress.md) — scope: both — status: accepted
+- 2026-07-26 — [Add Sepolia NFT-mint test case doc under docs/testing/](2026-07-26-002-sepolia-nft-mint-test-case-doc.md) — scope: both — status: accepted
+- 2026-07-26 — [Rotate Pinata IPFS credentials](2026-07-26-001-rotate-pinata-credentials.md) — scope: frontend — status: accepted
+- 2026-07-23 — [Plan 0013 transitioned draft → approved](2026-07-23-002-plan-0013-draft-to-approved.md) — scope: both — status: accepted
+- 2026-07-23 — [Scaffold `.env` / `frontend/.env.local` on Dev Container creation instead of leaving them unhandled](2026-07-23-001-devcontainer-env-scaffolding.md) — scope: both — status: proposed
 - 2026-07-20 — [Plan 0012 transitioned in-progress → done; ADR 0012 bumped proposed → accepted](2026-07-20-004-plan-0012-in-progress-to-done.md) — scope: both — status: accepted
 - 2026-07-20 — [Plan 0012 transitioned draft → in-progress](2026-07-20-003-plan-0012-draft-to-in-progress.md) — scope: both — status: accepted
 - 2026-07-20 — [Plan 0011 transitioned in-progress → done; ADR 0011 bumped proposed → accepted](2026-07-20-002-plan-0011-in-progress-to-done.md) — scope: both — status: accepted
