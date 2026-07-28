@@ -4,6 +4,10 @@ One line per decision file under `docs/decisions/`. Newest first.
 
 Format: `- YYYY-MM-DD — [Title](YYYY-MM-DD-NNN-slug.md) — scope: <frontend|contracts|both> — status: <proposed|accepted|superseded>`
 
+- 2026-07-28 — [Plan 0022 transitioned draft → in-progress and completed](2026-07-28-007-plan-0022-draft-to-in-progress.md) — scope: frontend — status: accepted
+- 2026-07-28 — [Add a write-flow step documenting the compensating unpin, instead of redrawing the architecture diagram](2026-07-28-006-document-compensating-unpin-in-readme.md) — scope: frontend — status: accepted
+- 2026-07-28 — [Plan 0020 implementation: two findings beyond the original task list](2026-07-28-005-plan-0020-implementation-findings.md) — scope: contracts — status: accepted
+- 2026-07-28 — [Plan 0020 transitioned draft → in-progress](2026-07-28-004-plan-0020-draft-to-in-progress.md) — scope: contracts — status: accepted
 - 2026-07-28 — [Gate `main`'s Vercel production deploy on `npm test` via GitHub Actions + a Deploy Hook, not a Vercel build-command override](2026-07-28-003-gate-vercel-deploy-on-contract-tests.md) — scope: both — status: accepted
 - 2026-07-28 — [Use Hardhat's native Mocha/ethers runner for automated contract tests; do not combine with plan 0019](2026-07-28-002-automated-hardhat-test-suite.md) — scope: contracts — status: accepted
 - 2026-07-28 — [Run the local Hardhat node as a container-lifecycle background process, not via Foundry Anvil disk persistence](2026-07-28-001-persistent-local-hardhat-node.md) — scope: contracts — status: accepted

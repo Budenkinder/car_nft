@@ -28,8 +28,9 @@ Write flow:
 1. The **minter** operator (e.g. a registry admin) connects MetaMask (Sepolia) in the frontend. To register a new VIN, the connected wallet must equal the contract's `minter()`.
 2. On submit, the frontend pins a JSON metadata object to IPFS via Pinata and gets back a CID.
 3. The frontend calls `VinCidRegistry.storeCid(vin, cid, recipient)`. The first call for a VIN mints its NFT to `recipient` (the car owner). Later calls update the `tokenURI` — updates are open in this POC build (anyone can call them).
-4. On mint only, the registry attempts to transfer `rewardAmount` of CRT to the `recipient` (best-effort — silent on failure, so the write still succeeds if funding is empty).
-5. To read history, the UI calls `getCidByVin(vin)` and fetches the JSON from `https://gateway.pinata.cloud/ipfs/<cid>`.
+4. **On-chain failure after a successful pin:** if `storeCid` reverts or the wallet rejects the transaction, the frontend unpins the CID it just pinned in step 2 before surfacing the original error — a failed mint never leaves an orphaned, unreferenced IPFS entry behind ([frontend/src/utils/pinata_ipfs_nft_service.js](frontend/src/utils/pinata_ipfs_nft_service.js)).
+5. On mint only, the registry attempts to transfer `rewardAmount` of CRT to the `recipient` (best-effort — silent on failure, so the write still succeeds if funding is empty).
+6. To read history, the UI calls `getCidByVin(vin)` and fetches the JSON from `https://gateway.pinata.cloud/ipfs/<cid>`.
 
 ## Repository layout
 
@@ -88,6 +89,17 @@ Key functions:
 ### `CarRewardToken` ([contracts/car_reward_token.sol](contracts/car_reward_token.sol))
 
 Standard OpenZeppelin ERC-20 named `CarRewardToken` (symbol `CRT`). Mints 1,000,000,000 CRT to the deployer at construction; the owner can `mint(to, amount)` more later.
+
+### Running the contract test suite
+
+Automated tests for both contracts live under [test/](test/) (Hardhat's built-in Mocha/ethers runner — no MetaMask, no browser, no extra dependencies):
+
+```bash
+npm test              # human-readable spec output, for local dev
+npm run test:report   # regenerates docs/testing/automated-test-report.md (pass/fail summary + gas usage per contract)
+```
+
+`npm run test:report` re-runs the suite with gas stats collection and writes a committed Markdown report — see [docs/testing/automated-test-report.md](docs/testing/automated-test-report.md) for the latest run. Two small mock contracts under `contracts/mocks/` back edge-case tests only (a non-standard ERC-20 for `withdrawToken`, and a reentrant NFT receiver documenting — not fixing — a `storeCid` reentrancy edge case); neither is ever deployed by `scripts/deploy.js`.
 
 ## Deploying the smart contracts
 

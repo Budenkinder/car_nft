@@ -6,7 +6,9 @@ metadata:
   scope: contracts
 ---
 
-Automated tests for `VinCidRegistry`/`CarRewardToken` live under `test/`, using Hardhat 3's native Mocha + ethers runner (bundled in `@nomicfoundation/hardhat-toolbox-mocha-ethers` — no extra deps). Each file opens with `const { ethers, networkHelpers } = await network.create();` (top-level await, ESM) and uses `networkHelpers.loadFixture(deployRegistryFixture)` from `test/fixtures.js` for fast, isolated per-test state.
+Automated tests for `VinCidRegistry`/`CarRewardToken` live under `test/`, using Hardhat 3's native Mocha + ethers runner (bundled in `@nomicfoundation/hardhat-toolbox-mocha-ethers` — no extra deps). Each file opens with `const { ethers, networkHelpers } = await network.create();` (top-level await, ESM). `test/fixtures.js` exports `deployRegistryFixture(ethers)` (takes `ethers` as a param, since it must run on the *same* network connection as the calling test file); each test file wraps it in a local zero-arg `fixture()` and calls `networkHelpers.loadFixture(fixture)` for fast, isolated per-test state (confirmed via a probe: state genuinely reverts between tests, even across different `it()`/`describe()` blocks reusing the same fixture function reference).
+
+Chai matcher note: this Hardhat 3 toolchain deprecated the bare `.to.be.reverted` — use `.to.revert(ethers)` / `.to.not.revert(ethers)` instead (`revertedWith`/`revertedWithCustomError`/`emit` are unaffected). Using the deprecated matcher doesn't just fail that one assertion — the thrown deprecation error was observed corrupting a *later* test's `loadFixture` state in the same file (state leaked across tests until the deprecated matcher was replaced), so treat any deprecation warning here as a same-file blast radius, not an isolated failure.
 
 `npm test` runs the suite with the default spec reporter (human-readable). `npm run test:report` re-runs it with `--gas-stats-json` and renders a committed Markdown report at `docs/testing/automated-test-report.md` (the raw log and gas JSON are gitignored intermediates — only the rendered `.md` is committed).
 
