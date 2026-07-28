@@ -1,6 +1,6 @@
 # Automated Hardhat Test Report
 
-Generated 2026-07-28T12:33:59.848Z by `npm run test:report`. Regenerate after changing `test/` or the contracts under test — this file is committed so test coverage and gas costs are visible without running anything.
+Generated 2026-07-28T20:18:38.135Z by `npm run test:report`. Regenerate after changing `test/` or the contracts under test — this file is committed so test coverage and gas costs are visible without running anything.
 
 ## Summary
 
@@ -9,7 +9,7 @@ Generated 2026-07-28T12:33:59.848Z by `npm run test:report`. Regenerate after ch
 ## Tests
 
 - **CarRewardToken constructor**
-  - ✓ sets name, symbol, and decimals (34ms)
+  - ✓ sets name, symbol, and decimals (33ms)
   - ✓ mints the full initial supply to the deployer (2ms)
   - ✓ sets the deployer as owner (1ms)
 - **CarRewardToken mint**
@@ -18,14 +18,14 @@ Generated 2026-07-28T12:33:59.848Z by `npm run test:report`. Regenerate after ch
 - **VinCidRegistry edge cases withdrawToken — non-standard ERC-20 (no bool return)**
   - ✓ succeeds despite the token's transfer returning no boolean (16ms)
 - **VinCidRegistry edge cases reentrancy during the first mint**
-  - ✓ leaves vinToCid and the NFT's tokenURI pointing at different CIDs — documented, not fixed (14ms)
+  - ✓ leaves vinToCid and the NFT's tokenURI pointing at different CIDs — documented, not fixed (13ms)
 - **VinCidRegistry constructor**
   - ✓ reverts when initialMinter is the zero address (10ms)
   - ✓ sets the minter and emits MinterChanged on deploy (4ms)
 - **VinCidRegistry storeCid — new mint**
   - ✓ mints the NFT to recipient, sets tokenURI, emits CidStored, and pays the reward (4ms)
   - ✓ reverts when the VIN is not 17 characters (1ms)
-  - ✓ reverts when the CID is empty (1ms)
+  - ✓ reverts when the CID is empty (2ms)
   - ✓ reverts when called by anyone other than the minter (1ms)
   - ✓ reverts when recipient is the zero address (1ms)
 - **VinCidRegistry storeCid — update**
@@ -36,17 +36,17 @@ Generated 2026-07-28T12:33:59.848Z by `npm run test:report`. Regenerate after ch
   - ✓ emits MinterChanged and updates minter() on success (2ms)
 - **VinCidRegistry admin: setRewardToken / setRewardAmount**
   - ✓ setRewardToken reverts for non-owner and updates rewardToken() on success (2ms)
-  - ✓ setRewardAmount reverts for non-owner and updates rewardAmount() on success (3ms)
+  - ✓ setRewardAmount reverts for non-owner and updates rewardAmount() on success (2ms)
 - **VinCidRegistry admin: withdrawToken**
   - ✓ reverts for a non-owner caller (1ms)
   - ✓ reverts when `to` is the zero address (1ms)
-  - ✓ transfers the registry's balance and emits TokensWithdrawn (2ms)
+  - ✓ transfers the registry's balance and emits TokensWithdrawn (3ms)
 - **VinCidRegistry reward payout edge case**
   - ✓ mint still succeeds when the registry holds no reward tokens (4ms)
   - ✓ documents that default gas estimation can silently skip the reward despite a funded registry (2ms)
 - **VinCidRegistry view functions**
   - ✓ getAllVins/getAllCidsAsList are empty on a fresh registry (1ms)
-  - ✓ keep VIN/CID lists parallel and ordered across multiple mints (3ms)
+  - ✓ keep VIN/CID lists parallel and ordered across multiple mints (4ms)
 
 ## Gas Usage
 
