@@ -176,6 +176,11 @@ To use it from the frontend:
 - **Easiest** — click **Show All Registered NFTs** in the app. It reads directly from the contract (`getAllVins` / `getAllCidsAsList`), bypassing MetaMask entirely.
 - **Manual MetaMask import** — NFTs tab → *Import NFT*, using the registry contract address (`REACT_APP_SMART_CONTRACT_ADDRESS_LOCAL`, or from `deployments/localhost.json`) and the token ID. Token IDs here aren't sequential (1, 2, 3…) — [contracts/car_nft_sc.sol](contracts/car_nft_sc.sol) derives them as `uint256(keccak256(vin))`, so you need to compute the hash rather than guess it.
 
+**CRT (ERC-20) reward balance:** the same auto-detection gap applies to the CRT reward. MetaMask doesn't scan for arbitrary ERC-20 balances any more than it does for NFTs, so a successfully-paid reward won't just show up under Assets. Two things to check:
+
+- **You're looking at the right wallet.** `storeCid`'s reward always pays the mint's `recipient`, never the connected/minter wallet — see [Using the app](#using-the-app) below. If you minted to someone else's wallet, the CRT lands there, not in your own account.
+- **The token needs a manual import.** MetaMask → Assets tab → *Import tokens* → paste the CarRewardToken contract address (symbol `CRT`, `18` decimals). Get the address from `deployments/localhost.json`'s `rewardToken` field for a local deploy, or from [Reference deployment (Sepolia)](#reference-deployment-sepolia) below for Sepolia.
+
 State persists for as long as `npm run node` keeps running. Killing the node wipes everything; the next `npm run deploy:local` produces fresh addresses.
 
 > **Warning**: Hardhat's test mnemonic is public knowledge — anyone running `npx hardhat node` gets the same 20 keys. Never use these accounts on any real network.
@@ -225,8 +230,8 @@ Re-verifying an already-verified contract is a no-op. Requires `ETHERSCAN_API_KE
 
 The latest live addresses are always in [deployments/sepolia.json](deployments/sepolia.json). Inspect on the explorer:
 
-- [CarRewardToken on Sepolia Etherscan](https://sepolia.etherscan.io/address/0x66060BA7061A5A2fB03A52891f5632F411745EFa)
-- [VinCidRegistry on Sepolia Etherscan](https://sepolia.etherscan.io/address/0x13F88B69Ff989037F455618c938fCcE544EeE3A5)
+- [CarRewardToken on Sepolia Etherscan](https://sepolia.etherscan.io/address/0xABdC5742FFe7E34Af79f08E46D099Fd9bE3bC68c)
+- [VinCidRegistry on Sepolia Etherscan](https://sepolia.etherscan.io/address/0x089711b304ad2E279843588F7051AFe59797CdB8)
 
 After a redeploy, commit the updated `deployments/sepolia.json` and update `REACT_APP_SMART_CONTRACT_ADDRESS` in Vercel's UI (see Vercel section).
 
@@ -265,7 +270,7 @@ Other scripts: `npm run build`, `npm test`, `npm run clean` (nuke build + node_m
 
 1. Open the app and click **Connect Wallet**. Approve in MetaMask and switch to Sepolia if prompted. The "Create or Update" panel shows the contract's current `minter` address and whether your connected wallet matches.
 2. **Search**: enter a 17-char VIN and click *Load Car NFT*. The app reads the CID from the contract and fetches the metadata from Pinata's gateway. After this call the app knows whether the VIN already exists on-chain (controls which fields/buttons appear next).
-3. **Register a new car (mint)**: the connected wallet must be the **minter**. Fill in VIN, **Car Owner Wallet (recipient)**, brand, model, year, issue, repair shop, mileage, then *Register New Car NFT*. The app pins the JSON to IPFS and calls `storeCid(vin, cid, recipient)`. The NFT lands in the recipient's wallet; the CRT reward is also paid to the recipient.
+3. **Register a new car (mint)**: the connected wallet must be the **minter**. Fill in VIN, **TÜV Car Inspection Wallet Address (recipient)**, brand, model, year, issue, repair shop, mileage, then *Register New Car NFT*. The app pins the JSON to IPFS and calls `storeCid(vin, cid, recipient)`. The NFT lands in the recipient's wallet; the CRT reward is also paid to the recipient.
 4. **Update an existing car**: any connected wallet works (POC behavior). The Recipient field is hidden because the NFT already exists; the update is applied to that VIN's existing NFT. Click *Submit Repair Update*.
 5. After confirmation, the tx hash links to Sepolia Etherscan.
 
@@ -340,6 +345,7 @@ That file is the Netlify equivalent of the rewrite. It's harmless on Vercel — 
 - **Secrets in the bundle** — anything prefixed `REACT_APP_` ships to the browser. Scope the Pinata JWT to pinning only, and rotate if leaked.
 - **`No contracts to compile`** — this is Hardhat 3's normal "already up to date" message, not an error: it means every `.sol` file under `contracts/` already has a valid cached build, not that contracts weren't found. To force a full rebuild anyway (e.g. after a compiler/plugin change), run `npx hardhat clean && npm run compile`.
 - **NFT doesn't show up in MetaMask after minting** — expected. MetaMask's NFT auto-detection doesn't cover Hardhat's local chain (or reliably Sepolia). Use the app's **Show All Registered NFTs** button to verify the mint, or manually import the NFT in MetaMask with the contract address and token ID (see [Option 1 — Local deploy](#option-1--local-deploy-hardhat-no-sepolia)).
+- **CRT reward paid but not visible in MetaMask** — expected, not a failure (different from "Reward not received" above, which means the transfer didn't happen at all). MetaMask doesn't auto-detect arbitrary ERC-20 balances, and the reward always pays the mint's `recipient`, not the connected wallet. Check the receiving wallet, and manually add the CRT token via Assets → *Import tokens* (see [CRT (ERC-20) reward balance](#option-1--local-deploy-hardhat-no-sepolia)).
 
 ## License
 
