@@ -4,6 +4,8 @@ One line per decision file under `docs/decisions/`. Newest first.
 
 Format: `- YYYY-MM-DD — [Title](YYYY-MM-DD-NNN-slug.md) — scope: <frontend|contracts|both> — status: <proposed|accepted|superseded>`
 
+- 2026-07-28 — [Plan 0023 transitioned draft → in-progress and executed](2026-07-28-009-plan-0023-draft-to-in-progress.md) — scope: frontend — status: accepted
+- 2026-07-28 — [Relabel recipient field to "TÜV Car Inspection Wallet Address (recipient)"](2026-07-28-008-recipient-field-label-tuv.md) — scope: frontend — status: accepted
 - 2026-07-28 — [Plan 0022 transitioned draft → in-progress and completed](2026-07-28-007-plan-0022-draft-to-in-progress.md) — scope: frontend — status: accepted
 - 2026-07-28 — [Add a write-flow step documenting the compensating unpin, instead of redrawing the architecture diagram](2026-07-28-006-document-compensating-unpin-in-readme.md) — scope: frontend — status: accepted
 - 2026-07-28 — [Plan 0020 implementation: two findings beyond the original task list](2026-07-28-005-plan-0020-implementation-findings.md) — scope: contracts — status: accepted

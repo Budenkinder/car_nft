@@ -380,7 +380,7 @@ function App() {
             />
             {isNewMint && (
               <TextField
-                label="Car Owner Wallet (recipient)"
+                label="TÜV Car Inspection Wallet Address (recipient)"
                 fullWidth
                 value={recipient}
                 onChange={(e) => setRecipient(e.target.value)}
