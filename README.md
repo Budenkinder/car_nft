@@ -28,8 +28,9 @@ Write flow:
 1. The **minter** operator (e.g. a registry admin) connects MetaMask (Sepolia) in the frontend. To register a new VIN, the connected wallet must equal the contract's `minter()`.
 2. On submit, the frontend pins a JSON metadata object to IPFS via Pinata and gets back a CID.
 3. The frontend calls `VinCidRegistry.storeCid(vin, cid, recipient)`. The first call for a VIN mints its NFT to `recipient` (the car owner). Later calls update the `tokenURI` — updates are open in this POC build (anyone can call them).
-4. On mint only, the registry attempts to transfer `rewardAmount` of CRT to the `recipient` (best-effort — silent on failure, so the write still succeeds if funding is empty).
-5. To read history, the UI calls `getCidByVin(vin)` and fetches the JSON from `https://gateway.pinata.cloud/ipfs/<cid>`.
+4. **On-chain failure after a successful pin:** if `storeCid` reverts or the wallet rejects the transaction, the frontend unpins the CID it just pinned in step 2 before surfacing the original error — a failed mint never leaves an orphaned, unreferenced IPFS entry behind ([frontend/src/utils/pinata_ipfs_nft_service.js](frontend/src/utils/pinata_ipfs_nft_service.js)).
+5. On mint only, the registry attempts to transfer `rewardAmount` of CRT to the `recipient` (best-effort — silent on failure, so the write still succeeds if funding is empty).
+6. To read history, the UI calls `getCidByVin(vin)` and fetches the JSON from `https://gateway.pinata.cloud/ipfs/<cid>`.
 
 ## Repository layout
 
