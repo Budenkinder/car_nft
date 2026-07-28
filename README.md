@@ -28,8 +28,9 @@ Write flow:
 1. The **minter** operator (e.g. a registry admin) connects MetaMask (Sepolia) in the frontend. To register a new VIN, the connected wallet must equal the contract's `minter()`.
 2. On submit, the frontend pins a JSON metadata object to IPFS via Pinata and gets back a CID.
 3. The frontend calls `VinCidRegistry.storeCid(vin, cid, recipient)`. The first call for a VIN mints its NFT to `recipient` (the car owner). Later calls update the `tokenURI` — updates are open in this POC build (anyone can call them).
-4. On mint only, the registry attempts to transfer `rewardAmount` of CRT to the `recipient` (best-effort — silent on failure, so the write still succeeds if funding is empty).
-5. To read history, the UI calls `getCidByVin(vin)` and fetches the JSON from `https://gateway.pinata.cloud/ipfs/<cid>`.
+4. **On-chain failure after a successful pin:** if `storeCid` reverts or the wallet rejects the transaction, the frontend unpins the CID it just pinned in step 2 before surfacing the original error — a failed mint never leaves an orphaned, unreferenced IPFS entry behind ([frontend/src/utils/pinata_ipfs_nft_service.js](frontend/src/utils/pinata_ipfs_nft_service.js)).
+5. On mint only, the registry attempts to transfer `rewardAmount` of CRT to the `recipient` (best-effort — silent on failure, so the write still succeeds if funding is empty).
+6. To read history, the UI calls `getCidByVin(vin)` and fetches the JSON from `https://gateway.pinata.cloud/ipfs/<cid>`.
 
 ## Repository layout
 
@@ -55,6 +56,16 @@ car_nft/
     └── vercel.json             # SPA rewrite for Vercel
 ```
 
+## Development environment
+
+The repo includes a [VS Code Dev Container](.devcontainer/devcontainer.json) (also usable as a GitHub Codespace). Opening the repo in it provisions:
+
+- Base image `mcr.microsoft.com/devcontainers/base:ubuntu-24.04`, Node 22, zsh (as the default shell), and the GitHub CLI.
+- VS Code extensions: ESLint, Solidity (`JuanBlanco.solidity`), Prettier (with format-on-save enabled).
+- Port `3000` auto-forwarded and opened in a browser for the CRA dev server.
+
+`postCreateCommand` only runs `npm install` inside `frontend/`. It does **not** install the root-level dependencies (Hardhat, OpenZeppelin, etc.), so after the container finishes building, run `npm install` once at the repo root before using any of the `npm run compile` / `npm run node` / `npm run deploy:*` scripts below.
+
 ## Smart contracts
 
 ### `VinCidRegistry` ([contracts/car_nft_sc.sol](contracts/car_nft_sc.sol))
@@ -79,6 +90,17 @@ Key functions:
 
 Standard OpenZeppelin ERC-20 named `CarRewardToken` (symbol `CRT`). Mints 1,000,000,000 CRT to the deployer at construction; the owner can `mint(to, amount)` more later.
 
+### Running the contract test suite
+
+Automated tests for both contracts live under [test/](test/) (Hardhat's built-in Mocha/ethers runner — no MetaMask, no browser, no extra dependencies):
+
+```bash
+npm test              # human-readable spec output, for local dev
+npm run test:report   # regenerates docs/testing/automated-test-report.md (pass/fail summary + gas usage per contract)
+```
+
+`npm run test:report` re-runs the suite with gas stats collection and writes a committed Markdown report — see [docs/testing/automated-test-report.md](docs/testing/automated-test-report.md) for the latest run. Two small mock contracts under `contracts/mocks/` back edge-case tests only (a non-standard ERC-20 for `withdrawToken`, and a reentrant NFT receiver documenting — not fixing — a `storeCid` reentrancy edge case); neither is ever deployed by `scripts/deploy.js`.
+
 ## Deploying the smart contracts
 
 The repo ships a Hardhat setup at the root. Two flavors:
@@ -87,6 +109,8 @@ The repo ships a Hardhat setup at the root. Two flavors:
 - **Sepolia** — Ethereum's public testnet. Requires a Sepolia RPC endpoint, a funded deployer wallet, and (optionally) an Etherscan API key for source verification. Used for production via `main` → Vercel.
 
 Both flavors run the same `scripts/deploy.js`: deploy `CarRewardToken`, then `VinCidRegistry`, then fund the registry with CRT and set the per-mint reward.
+
+The root project runs on **Hardhat 3** as an ESM package (`"type": "module"` in `package.json`) — `hardhat.config.js` and `scripts/deploy.js` use `import`/`export`, not `require`/`module.exports`. The plugin bundle is `@nomicfoundation/hardhat-toolbox-mocha-ethers` (ethers + Mocha stack). `npm run compile` also generates a `types/` directory (TypeChain bindings); like `artifacts/`/`cache/`, it's regenerated on every compile and gitignored.
 
 ### Prerequisites
 
@@ -145,6 +169,13 @@ To use it from the frontend:
 - Import one of the test private keys printed by `npm run node` (account 0 = `0xf39Fd6e5…F92266`, the well-known Hardhat test account).
 - Restart `npm start` in `frontend/` so CRA picks up the new `.env.local` value.
 
+> **Dev Container / Codespaces users:** MetaMask runs in your browser on the host machine, not inside the container, so it can only reach `127.0.0.1:8545` if that port is forwarded out of the container — already configured in [.devcontainer/devcontainer.json](.devcontainer/devcontainer.json). If the container was already running before this was added, reload the window ("Dev Containers: Reload Window") so the new forwarded port takes effect.
+
+**ETH balance vs. NFT tokens:** MetaMask shows the native ETH balance for any imported account automatically — Hardhat's test accounts start pre-funded with 10,000 ETH, so that part "just works". It does **not** do the same for the VIN NFTs minted by `VinCidRegistry`: MetaMask's automatic token detection only queries its backing API for a handful of well-known networks, and Hardhat's local chain isn't one of them (Sepolia isn't reliably covered either). So after a successful mint, the NFT won't just appear in MetaMask's NFTs tab. Two ways to actually see it:
+
+- **Easiest** — click **Show All Registered NFTs** in the app. It reads directly from the contract (`getAllVins` / `getAllCidsAsList`), bypassing MetaMask entirely.
+- **Manual MetaMask import** — NFTs tab → *Import NFT*, using the registry contract address (`REACT_APP_SMART_CONTRACT_ADDRESS_LOCAL`, or from `deployments/localhost.json`) and the token ID. Token IDs here aren't sequential (1, 2, 3…) — [contracts/car_nft_sc.sol](contracts/car_nft_sc.sol) derives them as `uint256(keccak256(vin))`, so you need to compute the hash rather than guess it.
+
 State persists for as long as `npm run node` keeps running. Killing the node wipes everything; the next `npm run deploy:local` produces fresh addresses.
 
 > **Warning**: Hardhat's test mnemonic is public knowledge — anyone running `npx hardhat node` gets the same 20 keys. Never use these accounts on any real network.
@@ -202,6 +233,8 @@ After a redeploy, commit the updated `deployments/sepolia.json` and update `REAC
 ## Frontend
 
 Stack: React 18 (CRA), Material UI 5, ethers v5, web3 v4, MetaMask provider.
+
+> `ethers` is listed in `frontend/package.json` but is currently **unused** — all contract reads/writes go through `web3` (see [frontend/src/utils/pinata_ipfs_nft_service.js](frontend/src/utils/pinata_ipfs_nft_service.js)). No file under `frontend/src/` imports `ethers`.
 
 ### Environment variables
 
@@ -305,6 +338,8 @@ That file is the Netlify equivalent of the rewrite. It's harmless on Vercel — 
 - **`Pinata 401/403`** — invalid, expired, or under-scoped Pinata JWT. The error surfaces the response body — check it for the exact reason.
 - **Reward not received** — registry's CRT balance is empty, or `rewardAmount` is `0`. The write itself still succeeded.
 - **Secrets in the bundle** — anything prefixed `REACT_APP_` ships to the browser. Scope the Pinata JWT to pinning only, and rotate if leaked.
+- **`No contracts to compile`** — this is Hardhat 3's normal "already up to date" message, not an error: it means every `.sol` file under `contracts/` already has a valid cached build, not that contracts weren't found. To force a full rebuild anyway (e.g. after a compiler/plugin change), run `npx hardhat clean && npm run compile`.
+- **NFT doesn't show up in MetaMask after minting** — expected. MetaMask's NFT auto-detection doesn't cover Hardhat's local chain (or reliably Sepolia). Use the app's **Show All Registered NFTs** button to verify the mint, or manually import the NFT in MetaMask with the contract address and token ID (see [Option 1 — Local deploy](#option-1--local-deploy-hardhat-no-sepolia)).
 
 ## License
 

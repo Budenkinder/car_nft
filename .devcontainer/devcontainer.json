@@ -1,0 +1,36 @@
+{
+  "name": "car_nft",
+  "image": "mcr.microsoft.com/devcontainers/base:ubuntu-24.04",
+
+  "features": {
+    "ghcr.io/devcontainers/features/common-utils:2": {
+      "installZsh": true,
+      "configureZshAsDefaultShell": true
+    },
+    "ghcr.io/devcontainers/features/node:1": { "version": "22" },
+    "ghcr.io/devcontainers/features/github-cli:1": {}
+  },
+
+  "postCreateCommand": "cd frontend && npm install",
+
+  "forwardPorts": [3000, 8545],
+  "portsAttributes": {
+    "3000": { "label": "React dev server", "onAutoForward": "openBrowser" },
+    "8545": { "label": "Hardhat local node", "onAutoForward": "silent" }
+  },
+
+  "remoteUser": "vscode",
+
+  "customizations": {
+    "vscode": {
+      "extensions": [
+        "dbaeumer.vscode-eslint",
+        "JuanBlanco.solidity",
+        "esbenp.prettier-vscode"
+      ],
+      "settings": {
+        "editor.formatOnSave": true
+      }
+    }
+  }
+}

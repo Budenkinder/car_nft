@@ -2,6 +2,7 @@ import React, { useState, useCallback, useEffect, useMemo } from "react";
 import {
   getCidFromContract,
   getMinterAddress,
+  getAllRegisteredNfts,
   handleNFTCreation,
   fetchNFTMetadata,
 } from "./utils/pinata_ipfs_nft_service";
@@ -23,6 +24,9 @@ import {
   Stack,
   CircularProgress,
   IconButton,
+  List,
+  ListItem,
+  ListItemText,
 } from "@mui/material";
 import Brightness4Icon from "@mui/icons-material/Brightness4";
 import Brightness7Icon from "@mui/icons-material/Brightness7";
@@ -67,6 +71,9 @@ function App() {
   const [isLoadingNFT, setIsLoadingNFT] = useState(false);
   const [vinLastCid, setVinLastCid] = useState("");
   const [vinExistsOnChain, setVinExistsOnChain] = useState(false);
+  const [nftList, setNftList] = useState([]);
+  const [isLoadingList, setIsLoadingList] = useState(false);
+  const [listLoaded, setListLoaded] = useState(false);
 
   const callbackMetaMaskLogin = useCallback((address, newChainId) => {
     uiLog.debug("wallet callback", { address, chainId: newChainId });
@@ -222,6 +229,19 @@ function App() {
     }
   };
 
+  const handleShowAllNfts = async () => {
+    uiLog.info("showAllNfts:click", { chainId });
+    setIsLoadingList(true);
+    try {
+      const list = await getAllRegisteredNfts(chainId);
+      setNftList(list);
+      setListLoaded(true);
+      uiLog.info("showAllNfts:done", { count: list.length });
+    } finally {
+      setIsLoadingList(false);
+    }
+  };
+
   return (
     <ThemeProvider theme={theme}>
       <CssBaseline />
@@ -278,6 +298,52 @@ function App() {
           {vinLastCid && (
             <Typography variant="body2" sx={{ mt: 2 }}>
               Loaded CID: {vinLastCid}
+            </Typography>
+          )}
+        </Paper>
+      </Container>
+
+      <Container maxWidth="sm" sx={{ mt: 4 }}>
+        <Paper elevation={2} sx={{ p: 3 }}>
+          <Typography variant="h5" gutterBottom>
+            All Registered Car NFTs
+          </Typography>
+          <Button
+            variant="contained"
+            color="primary"
+            onClick={handleShowAllNfts}
+            disabled={isLoadingList || walletAddress.length === 0}
+            startIcon={
+              isLoadingList ? (
+                <CircularProgress size={20} color="inherit" />
+              ) : null
+            }
+          >
+            {isLoadingList ? "Loading..." : "Show all registered NFTs"}
+          </Button>
+          {nftList.length > 0 && (
+            <List dense sx={{ mt: 2 }}>
+              {nftList.map((nft) => (
+                <ListItem key={nft.vin} disableGutters divider>
+                  <ListItemText
+                    primary={nft.vin}
+                    secondary={
+                      <a
+                        href={`https://gateway.pinata.cloud/ipfs/${nft.cid}`}
+                        target="_blank"
+                        rel="noreferrer"
+                      >
+                        {nft.cid}
+                      </a>
+                    }
+                  />
+                </ListItem>
+              ))}
+            </List>
+          )}
+          {listLoaded && nftList.length === 0 && (
+            <Typography variant="body2" sx={{ mt: 2 }}>
+              No NFTs registered yet.
             </Typography>
           )}
         </Paper>
