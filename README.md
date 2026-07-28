@@ -89,6 +89,17 @@ Key functions:
 
 Standard OpenZeppelin ERC-20 named `CarRewardToken` (symbol `CRT`). Mints 1,000,000,000 CRT to the deployer at construction; the owner can `mint(to, amount)` more later.
 
+### Running the contract test suite
+
+Automated tests for both contracts live under [test/](test/) (Hardhat's built-in Mocha/ethers runner — no MetaMask, no browser, no extra dependencies):
+
+```bash
+npm test              # human-readable spec output, for local dev
+npm run test:report   # regenerates docs/testing/automated-test-report.md (pass/fail summary + gas usage per contract)
+```
+
+`npm run test:report` re-runs the suite with gas stats collection and writes a committed Markdown report — see [docs/testing/automated-test-report.md](docs/testing/automated-test-report.md) for the latest run. Two small mock contracts under `contracts/mocks/` back edge-case tests only (a non-standard ERC-20 for `withdrawToken`, and a reentrant NFT receiver documenting — not fixing — a `storeCid` reentrancy edge case); neither is ever deployed by `scripts/deploy.js`.
+
 ## Deploying the smart contracts
 
 The repo ships a Hardhat setup at the root. Two flavors:

@@ -25,6 +25,14 @@ export default defineConfig({
     },
   },
   networks,
+  test: {
+    mocha: {
+      // `npm test` stays human-readable (spec); `npm run test:report`
+      // switches to the JSON reporter via MOCHA_REPORTER to feed the
+      // generated docs/testing/automated-test-report.md.
+      reporter: process.env.MOCHA_REPORTER || "spec",
+    },
+  },
   verify: {
     etherscan: {
       // Etherscan V2 (unified across chains) — one key, no per-network map.

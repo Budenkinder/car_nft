@@ -22,3 +22,4 @@ Format: `- [Title](relative/path.md) — one-line hook`
 - [Sepolia deploys write a dated address log](contracts/sepolia-deploy-log.md) — every Sepolia deploy generates `docs/deployments/sepolia_contract_deploy_addresses_<date>.md`; treat `docs/deployments/` as generated.
 - [Local Hardhat node persistence approach](contracts/hardhat-node-persistence-approach.md) — node runs as a detached background process (postStartCommand) to survive terminal restarts; not disk-persisted, not Anvil.
 - [Automated Hardhat test suite](contracts/hardhat-automated-test-suite.md) — `network.create()` + `loadFixture`, not the persistent node; `npm test` / `npm run test:report`; report at docs/testing/automated-test-report.md.
+- [Reward payout gas-estimation risk](contracts/reward-payout-gas-estimation-risk.md) — storeCid's CRT reward can silently not pay out under default gas estimation, even fully funded; real production risk, not fixed.
