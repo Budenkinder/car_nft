@@ -4,6 +4,8 @@ One line per decision file under `docs/decisions/`. Newest first.
 
 Format: `- YYYY-MM-DD — [Title](YYYY-MM-DD-NNN-slug.md) — scope: <frontend|contracts|both> — status: <proposed|accepted|superseded>`
 
+- 2026-07-28 — [Reconstruct per-VIN transaction provenance from existing `CidStored` events, not off-chain storage](2026-07-28-014-nft-transaction-provenance-link.md) — scope: both — status: proposed
+- 2026-07-28 — [Clear "Create or Update" form fields after a successful new-VIN registration, not after updates](2026-07-28-013-clear-form-after-successful-registration.md) — scope: frontend — status: proposed
 - 2026-07-28 — [README's "Using the app" step synced to the current recipient field label](2026-07-28-012-readme-stale-recipient-label.md) — scope: frontend — status: accepted
 - 2026-07-28 — [Plan 0024 transitioned draft → in-progress and executed](2026-07-28-011-plan-0024-draft-to-in-progress.md) — scope: both — status: accepted
 - 2026-07-28 — [Document CRT MetaMask manual-import requirement, and fix stale Sepolia reference addresses in the same section](2026-07-28-010-readme-crt-metamask-import.md) — scope: both — status: accepted
