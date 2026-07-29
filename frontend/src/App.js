@@ -166,6 +166,16 @@ function App() {
     if (result.success) {
       uiLog.info("submit:success", { txHash: result.txHash });
       setTxHash(result.txHash);
+      if (isNewMint) {
+        setCreateVin("");
+        setRecipient("");
+        setBrand("");
+        setModel("");
+        setYear("");
+        setIssue("");
+        setShop("");
+        setMileage("");
+      }
     } else {
       uiLog.error("submit:failed", { message: result.message });
       setErrors({ general: result.message });

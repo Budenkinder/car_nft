@@ -4,8 +4,8 @@
 - **Date:** 2026-07-28
 - **Scope:** frontend
 - **Related plans:**
-  - `docs/plans/in-progress/0025-readme-stale-recipient-label-frontend.md`
-  - `docs/plans/in-progress/0025-readme-stale-recipient-label-contracts.md`
+  - `docs/plans/done/0025-readme-stale-recipient-label-frontend.md`
+  - `docs/plans/done/0025-readme-stale-recipient-label-contracts.md`
 - **Related decisions:** `docs/decisions/2026-07-28-012-readme-stale-recipient-label.md`
 
 ## Context

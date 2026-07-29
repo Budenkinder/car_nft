@@ -1,8 +1,8 @@
 # Plan 0026 — Clear form after successful registration — Frontend
 
 - **ADR:** `docs/adr/0026-clear-form-after-successful-registration.md`
-- **Paired plan:** `docs/plans/draft/0026-clear-form-after-successful-registration-contracts.md`
-- **Status:** draft
+- **Paired plan:** `docs/plans/done/0026-clear-form-after-successful-registration-contracts.md`
+- **Status:** done
 - **Date:** 2026-07-28
 
 > Plan files live in a subfolder named after their `Status:` value (`draft/`, `approved/`, `in-progress/`, `done/`, `rejected/`). New plans start in `docs/plans/draft/`. On every status transition, both files in the trio move together via `git mv`, and the ADR's `Related plans:` paths are rewritten in the same change. See [CLAUDE.md](../../../CLAUDE.md) for the full workflow.
@@ -19,8 +19,8 @@ When `handleSubmit` in `frontend/src/App.js` succeeds (`result.success`) **and**
 
 ## Tasks
 
-- [ ] **1.** In `frontend/src/App.js`, inside `handleSubmit`'s `if (result.success)` branch (currently lines 166-168), add: if `isNewMint` is `true`, call `setCreateVin("")`, `setRecipient("")`, `setBrand("")`, `setModel("")`, `setYear("")`, `setIssue("")`, `setShop("")`, `setMileage("")`.
-- [ ] **2.** Manually verify: register a new VIN successfully → all 8 fields blank out, success banner/tx link still shows. Then load an existing VIN and submit an update successfully → fields keep their values (unchanged behavior).
+- [x] **1.** In `frontend/src/App.js`, inside `handleSubmit`'s `if (result.success)` branch (currently lines 166-168), add: if `isNewMint` is `true`, call `setCreateVin("")`, `setRecipient("")`, `setBrand("")`, `setModel("")`, `setYear("")`, `setIssue("")`, `setShop("")`, `setMileage("")`. Implemented at [App.js:166-178](../../../frontend/src/App.js#L166-L178); `npm run build` compiles cleanly with no new warnings.
+- [x] **2.** Manually verify: register a new VIN successfully → all 8 fields blank out, success banner/tx link still shows. Then load an existing VIN and submit an update successfully → fields keep their values (unchanged behavior). Confirmed by the user in a real browser with MetaMask — works as expected.
 
 ## Interfaces with Contracts
 

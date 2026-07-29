@@ -4,6 +4,11 @@ One line per decision file under `docs/decisions/`. Newest first.
 
 Format: `- YYYY-MM-DD — [Title](YYYY-MM-DD-NNN-slug.md) — scope: <frontend|contracts|both> — status: <proposed|accepted|superseded>`
 
+- 2026-07-29 — [Plan 0026 transitioned in-progress → done; ADR 0026 bumped proposed → accepted](2026-07-29-008-plan-0026-in-progress-to-done.md) — scope: frontend — status: accepted
+- 2026-07-29 — [Plan 0026 transitioned draft → in-progress](2026-07-29-007-plan-0026-draft-to-in-progress.md) — scope: frontend — status: accepted
+- 2026-07-29 — [Plan 0025 transitioned in-progress → done](2026-07-29-006-plan-0025-in-progress-to-done.md) — scope: frontend — status: accepted
+- 2026-07-29 — [Plan 0024 transitioned in-progress → done](2026-07-29-005-plan-0024-in-progress-to-done.md) — scope: frontend — status: accepted
+- 2026-07-29 — [Plan 0022 transitioned in-progress → done](2026-07-29-004-plan-0022-in-progress-to-done.md) — scope: frontend — status: accepted
 - 2026-07-29 — [Plan 0023 transitioned in-progress → done](2026-07-29-003-plan-0023-in-progress-to-done.md) — scope: frontend — status: accepted
 - 2026-07-29 — [Plan 0020 transitioned in-progress → done](2026-07-29-002-plan-0020-in-progress-to-done.md) — scope: contracts — status: accepted
 - 2026-07-29 — [Plan 0018 transitioned in-progress → done](2026-07-29-001-plan-0018-in-progress-to-done.md) — scope: frontend — status: accepted

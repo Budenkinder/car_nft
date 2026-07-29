@@ -1,11 +1,11 @@
 # ADR 0026: Clear the "Create or Update" form fields after a successful new-VIN registration
 
-- **Status:** proposed
+- **Status:** accepted
 - **Date:** 2026-07-28
 - **Scope:** frontend
 - **Related plans:**
-  - `docs/plans/draft/0026-clear-form-after-successful-registration-frontend.md`
-  - `docs/plans/draft/0026-clear-form-after-successful-registration-contracts.md`
+  - `docs/plans/done/0026-clear-form-after-successful-registration-frontend.md`
+  - `docs/plans/done/0026-clear-form-after-successful-registration-contracts.md`
 - **Related decisions:** `docs/decisions/2026-07-28-013-clear-form-after-successful-registration.md`
 
 ## Context

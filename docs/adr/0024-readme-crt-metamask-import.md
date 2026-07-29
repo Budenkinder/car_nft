@@ -4,8 +4,8 @@
 - **Date:** 2026-07-28
 - **Scope:** both
 - **Related plans:**
-  - `docs/plans/in-progress/0024-readme-crt-metamask-import-frontend.md`
-  - `docs/plans/in-progress/0024-readme-crt-metamask-import-contracts.md`
+  - `docs/plans/done/0024-readme-crt-metamask-import-frontend.md`
+  - `docs/plans/done/0024-readme-crt-metamask-import-contracts.md`
 - **Related decisions:** `docs/decisions/2026-07-28-010-readme-crt-metamask-import.md`
 
 ## Context
