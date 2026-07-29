@@ -4,8 +4,8 @@
 - **Date:** 2026-07-28
 - **Scope:** contracts
 - **Related plans:**
-  - `docs/plans/in-progress/0020-automated-hardhat-test-suite-frontend.md`
-  - `docs/plans/in-progress/0020-automated-hardhat-test-suite-contracts.md`
+  - `docs/plans/done/0020-automated-hardhat-test-suite-frontend.md`
+  - `docs/plans/done/0020-automated-hardhat-test-suite-contracts.md`
 - **Related decisions:** `docs/decisions/2026-07-28-002-automated-hardhat-test-suite.md`
 
 ## Context

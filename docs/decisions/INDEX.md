@@ -4,6 +4,9 @@ One line per decision file under `docs/decisions/`. Newest first.
 
 Format: `- YYYY-MM-DD — [Title](YYYY-MM-DD-NNN-slug.md) — scope: <frontend|contracts|both> — status: <proposed|accepted|superseded>`
 
+- 2026-07-29 — [Plan 0023 transitioned in-progress → done](2026-07-29-003-plan-0023-in-progress-to-done.md) — scope: frontend — status: accepted
+- 2026-07-29 — [Plan 0020 transitioned in-progress → done](2026-07-29-002-plan-0020-in-progress-to-done.md) — scope: contracts — status: accepted
+- 2026-07-29 — [Plan 0018 transitioned in-progress → done](2026-07-29-001-plan-0018-in-progress-to-done.md) — scope: frontend — status: accepted
 - 2026-07-28 — [Reconstruct per-VIN transaction provenance from existing `CidStored` events, not off-chain storage](2026-07-28-014-nft-transaction-provenance-link.md) — scope: both — status: proposed
 - 2026-07-28 — [Clear "Create or Update" form fields after a successful new-VIN registration, not after updates](2026-07-28-013-clear-form-after-successful-registration.md) — scope: frontend — status: proposed
 - 2026-07-28 — [README's "Using the app" step synced to the current recipient field label](2026-07-28-012-readme-stale-recipient-label.md) — scope: frontend — status: accepted

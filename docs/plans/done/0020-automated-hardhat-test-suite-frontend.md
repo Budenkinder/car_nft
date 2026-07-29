@@ -1,8 +1,8 @@
 # Plan 0020 — Automated Hardhat test suite for VinCidRegistry and CarRewardToken — Frontend
 
 - **ADR:** `docs/adr/0020-automated-hardhat-test-suite.md`
-- **Paired plan:** `docs/plans/in-progress/0020-automated-hardhat-test-suite-contracts.md`
-- **Status:** in-progress
+- **Paired plan:** `docs/plans/done/0020-automated-hardhat-test-suite-contracts.md`
+- **Status:** done
 - **Date:** 2026-07-28
 
 > Plan files live in a subfolder named after their `Status:` value (`draft/`, `approved/`, `in-progress/`, `done/`, `rejected/`). New plans start in `docs/plans/draft/`. On every status transition, both files in the trio move together via `git mv`, and the ADR's `Related plans:` paths are rewritten in the same change. See [CLAUDE.md](../../../CLAUDE.md) for the full workflow.
