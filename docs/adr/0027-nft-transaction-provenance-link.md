@@ -4,8 +4,8 @@
 - **Date:** 2026-07-28
 - **Scope:** both
 - **Related plans:**
-  - `docs/plans/draft/0027-nft-transaction-provenance-link-frontend.md`
-  - `docs/plans/draft/0027-nft-transaction-provenance-link-contracts.md`
+  - `docs/plans/in-progress/0027-nft-transaction-provenance-link-frontend.md`
+  - `docs/plans/in-progress/0027-nft-transaction-provenance-link-contracts.md`
 - **Related decisions:** `docs/decisions/2026-07-28-014-nft-transaction-provenance-link.md`
 
 ## Context

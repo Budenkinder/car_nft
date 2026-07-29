@@ -4,6 +4,9 @@ One line per decision file under `docs/decisions/`. Newest first.
 
 Format: `- YYYY-MM-DD — [Title](YYYY-MM-DD-NNN-slug.md) — scope: <frontend|contracts|both> — status: <proposed|accepted|superseded>`
 
+- 2026-07-29 — [Plan 0027's manual browser verification deferred to after dev → main merge](2026-07-29-011-plan-0027-manual-test-deferred-to-post-merge.md) — scope: both — status: accepted
+- 2026-07-29 — [Backfill Sepolia's `deployedAtBlock` via `eth_getCode` binary search, and chunk event-log queries to stay under RPC range/rate limits](2026-07-29-010-backfill-sepolia-deployed-at-block.md) — scope: both — status: accepted
+- 2026-07-29 — [Plan 0027 transitioned draft → in-progress](2026-07-29-009-plan-0027-draft-to-in-progress.md) — scope: both — status: accepted
 - 2026-07-29 — [Plan 0026 transitioned in-progress → done; ADR 0026 bumped proposed → accepted](2026-07-29-008-plan-0026-in-progress-to-done.md) — scope: frontend — status: accepted
 - 2026-07-29 — [Plan 0026 transitioned draft → in-progress](2026-07-29-007-plan-0026-draft-to-in-progress.md) — scope: frontend — status: accepted
 - 2026-07-29 — [Plan 0025 transitioned in-progress → done](2026-07-29-006-plan-0025-in-progress-to-done.md) — scope: frontend — status: accepted

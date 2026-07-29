@@ -24,3 +24,25 @@ export const getContractAddress = (chainId) => {
   }
   return address;
 };
+
+/**
+ * Block the registry was deployed at, for each network. Used to bound
+ * `CidStored` event scans instead of scanning from genesis.
+ */
+const CONTRACT_DEPLOY_BLOCKS = {
+  "0xaa36a7": process.env.REACT_APP_SMART_CONTRACT_DEPLOY_BLOCK,
+  "0x7a69": process.env.REACT_APP_SMART_CONTRACT_DEPLOY_BLOCK_LOCAL,
+};
+
+/**
+ * Get the block the contract was deployed at for the current network.
+ * Falls back to 0 (full scan) when unset or unparsable — covers deployments
+ * that predate this field, e.g. the currently-live Sepolia deployment.
+ * @param {string} chainId - The current chain ID in hex format (e.g., "0xaa36a7")
+ * @returns {number}
+ */
+export const getContractDeployBlock = (chainId) => {
+  const raw = CONTRACT_DEPLOY_BLOCKS[chainId];
+  const parsed = parseInt(raw, 10);
+  return Number.isNaN(parsed) ? 0 : parsed;
+};

@@ -1,7 +1,7 @@
 import { isValidCID, validateCarData } from "../utils/validation";
 import Web3 from "web3";
 import contractAbi from "../utils/contract_abi.json";
-import { getContractAddress } from "./contract_utils";
+import { getContractAddress, getContractDeployBlock } from "./contract_utils";
 import { netLog, txLog } from "./logger";
 
 const PINATA_BASE = process.env.REACT_APP_PINATA_API_URL.replace(/\/+$/, "");
@@ -97,6 +97,71 @@ export const getAllRegisteredNfts = async (chainId) => {
     return list;
   } catch (error) {
     netLog.error("getAllRegisteredNfts:failed", { chainId, error: error.message });
+    return [];
+  }
+};
+
+// Most RPC providers cap a single eth_getLogs call's block range (commonly
+// 10,000 blocks — e.g. Infura/Alchemy free tiers). A `fromBlock` far behind
+// the chain tip (the fallback-to-0 case for deployments that predate
+// `deployedAtBlock`, or simply a chain that's grown since deploy) can exceed
+// that on its own, so the scan is split into windows under the cap.
+const MAX_BLOCK_RANGE = 9999;
+
+const getPastEventsChunked = async (contract, eventName, fromBlock, toBlock) => {
+  const events = [];
+  for (let start = fromBlock; start <= toBlock; start += MAX_BLOCK_RANGE + 1) {
+    const end = Math.min(start + MAX_BLOCK_RANGE, toBlock);
+    const chunk = await contract.getPastEvents(eventName, {
+      fromBlock: start,
+      toBlock: end,
+    });
+    events.push(...chunk);
+  }
+  return events;
+};
+
+// Reconstructs a VIN's on-chain history from CidStored events — the first
+// (lowest-block) match is the mint, every later one an update. vin/tokenId
+// aren't indexed on the event, so filtering happens client-side.
+export const getTransactionHistoryForVin = async (vin, chainId) => {
+  netLog.debug("getTransactionHistoryForVin:start", { vin, chainId });
+  try {
+    const web3 = new Web3(window.ethereum);
+    const address = getContractAddress(chainId);
+    if (!address) return [];
+
+    const contract = new web3.eth.Contract(contractAbi, address);
+    const fromBlock = getContractDeployBlock(chainId);
+    const latestBlock = Number(await web3.eth.getBlockNumber());
+    const events = await getPastEventsChunked(
+      contract,
+      "CidStored",
+      fromBlock,
+      latestBlock
+    );
+
+    const history = events
+      .filter((event) => event.returnValues.vin === vin)
+      .map((event) => ({
+        cid: event.returnValues.cid,
+        txHash: event.transactionHash,
+        blockNumber: Number(event.blockNumber),
+      }))
+      .sort((a, b) => a.blockNumber - b.blockNumber);
+
+    netLog.info("getTransactionHistoryForVin:done", {
+      vin,
+      chainId,
+      count: history.length,
+    });
+    return history;
+  } catch (error) {
+    netLog.error("getTransactionHistoryForVin:failed", {
+      vin,
+      chainId,
+      error: error.message,
+    });
     return [];
   }
 };
