@@ -4,8 +4,8 @@
 - **Date:** 2026-07-28
 - **Scope:** frontend
 - **Related plans:**
-  - `docs/plans/in-progress/0022-document-compensating-unpin-in-readme-frontend.md`
-  - `docs/plans/in-progress/0022-document-compensating-unpin-in-readme-contracts.md`
+  - `docs/plans/done/0022-document-compensating-unpin-in-readme-frontend.md`
+  - `docs/plans/done/0022-document-compensating-unpin-in-readme-contracts.md`
 - **Related decisions:** `docs/decisions/2026-07-28-006-document-compensating-unpin-in-readme.md`
 
 ## Context

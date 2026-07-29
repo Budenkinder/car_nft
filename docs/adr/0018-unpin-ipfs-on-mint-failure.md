@@ -4,8 +4,8 @@
 - **Date:** 2026-07-26
 - **Scope:** frontend
 - **Related plans:**
-  - `docs/plans/in-progress/0018-unpin-ipfs-on-mint-failure-frontend.md`
-  - `docs/plans/in-progress/0018-unpin-ipfs-on-mint-failure-contracts.md`
+  - `docs/plans/done/0018-unpin-ipfs-on-mint-failure-frontend.md`
+  - `docs/plans/done/0018-unpin-ipfs-on-mint-failure-contracts.md`
 - **Related decisions:** `docs/decisions/2026-07-26-011-unpin-ipfs-on-mint-failure.md`
 
 ## Context

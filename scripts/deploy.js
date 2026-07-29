@@ -45,6 +45,15 @@ async function main() {
   const registryAddress = await registry.getAddress();
   console.log("VinCidRegistry:", registryAddress);
 
+  // Deployment block, so the frontend can bound its `CidStored` event scan
+  // with `fromBlock` instead of scanning from genesis. `deploymentTransaction()`
+  // returns the response captured at broadcast time, which may predate mining;
+  // fall back to `.wait()` (already-mined, so this resolves immediately) when
+  // `blockNumber` isn't populated yet.
+  const deployTx = registry.deploymentTransaction();
+  const deployedAtBlock =
+    deployTx?.blockNumber ?? (await deployTx.wait()).blockNumber;
+
   // 3. Persist addresses BEFORE the funding step — so a funding failure does
   //    not strand the deployed addresses in console output only.
   const artifact = {
@@ -55,6 +64,7 @@ async function main() {
     registry: registryAddress,
     initialMinter,
     deployedAt: new Date().toISOString(),
+    deployedAtBlock,
   };
   const dir = path.join(__dirname, "..", "deployments");
   fs.mkdirSync(dir, { recursive: true });
@@ -95,18 +105,23 @@ async function main() {
   const envPath = path.join(__dirname, "..", "frontend", ".env.local");
   if (networkName === "localhost" || networkName === "hardhat") {
     const key = "REACT_APP_SMART_CONTRACT_ADDRESS_LOCAL";
+    const blockKey = "REACT_APP_SMART_CONTRACT_DEPLOY_BLOCK_LOCAL";
     upsertEnvVar(envPath, key, registryAddress);
-    console.log(`Updated ${envPath} (${key}=${registryAddress})`);
+    upsertEnvVar(envPath, blockKey, deployedAtBlock);
+    console.log(`Updated ${envPath} (${key}=${registryAddress}, ${blockKey}=${deployedAtBlock})`);
     console.log("Restart the React dev server to pick up the new address.");
   } else if (networkName === "sepolia") {
     const key = "REACT_APP_SMART_CONTRACT_ADDRESS";
+    const blockKey = "REACT_APP_SMART_CONTRACT_DEPLOY_BLOCK";
     upsertEnvVar(envPath, key, registryAddress);
-    console.log(`Updated ${envPath} (${key}=${registryAddress})`);
+    upsertEnvVar(envPath, blockKey, deployedAtBlock);
+    console.log(`Updated ${envPath} (${key}=${registryAddress}, ${blockKey}=${deployedAtBlock})`);
     console.log("Restart the React dev server to pick up the new address.");
     console.log(
       "\nFor production, also set in Vercel → Project Settings → Environment Variables (Production):"
     );
     console.log(`  REACT_APP_SMART_CONTRACT_ADDRESS=${registryAddress}`);
+    console.log(`  REACT_APP_SMART_CONTRACT_DEPLOY_BLOCK=${deployedAtBlock}`);
     console.log("Then trigger a redeploy of `main` so the new bundle picks it up.");
   } else {
     console.log(`Add a ${networkName} entry to frontend/src/utils/contract_utils.js:`);
@@ -130,6 +145,7 @@ async function main() {
 - **Network:** ${networkName} (chainId ${artifact.chainId})
 - **Deployer:** ${artifact.deployer}
 - **Deployed at:** ${artifact.deployedAt}
+- **Deployed at block:** ${artifact.deployedAtBlock}
 
 ## Contract Addresses
 

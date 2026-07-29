@@ -5,6 +5,7 @@ import {
   getAllRegisteredNfts,
   handleNFTCreation,
   fetchNFTMetadata,
+  getTransactionHistoryForVin,
 } from "./utils/pinata_ipfs_nft_service";
 import { isValidVIN, validateCarData } from "./utils/validation";
 import { uiLog } from "./utils/logger";
@@ -74,6 +75,7 @@ function App() {
   const [nftList, setNftList] = useState([]);
   const [isLoadingList, setIsLoadingList] = useState(false);
   const [listLoaded, setListLoaded] = useState(false);
+  const [txHistory, setTxHistory] = useState([]);
 
   const callbackMetaMaskLogin = useCallback((address, newChainId) => {
     uiLog.debug("wallet callback", { address, chainId: newChainId });
@@ -166,6 +168,17 @@ function App() {
     if (result.success) {
       uiLog.info("submit:success", { txHash: result.txHash });
       setTxHash(result.txHash);
+      getTransactionHistoryForVin(createVin, chainId).then(setTxHistory);
+      if (isNewMint) {
+        setCreateVin("");
+        setRecipient("");
+        setBrand("");
+        setModel("");
+        setYear("");
+        setIssue("");
+        setShop("");
+        setMileage("");
+      }
     } else {
       uiLog.error("submit:failed", { message: result.message });
       setErrors({ general: result.message });
@@ -199,6 +212,7 @@ function App() {
 
       if (cid) {
         uiLog.info("loadNft:vin_exists", { vin, cid });
+        getTransactionHistoryForVin(vin, chainId).then(setTxHistory);
         const metadata = await fetchNFTMetadata(cid);
         if (metadata.success) {
           uiLog.info("loadNft:metadata_loaded", { vin, cid });
@@ -481,6 +495,35 @@ function App() {
                   {txHash}
                 </a>
               </Typography>
+            </Box>
+          )}
+
+          {txHistory.length > 0 && (
+            <Box mt={2}>
+              <Typography variant="subtitle2" gutterBottom>
+                Transaction History
+              </Typography>
+              <List dense>
+                {txHistory.map((entry, index) => (
+                  <ListItem key={entry.txHash} disableGutters divider>
+                    <ListItemText
+                      primary={index === 0 ? "Registration" : "Update"}
+                      secondary={
+                        <>
+                          Block {entry.blockNumber} —{" "}
+                          <a
+                            href={`https://sepolia.etherscan.io/tx/${entry.txHash}`}
+                            target="_blank"
+                            rel="noreferrer"
+                          >
+                            {entry.txHash}
+                          </a>
+                        </>
+                      }
+                    />
+                  </ListItem>
+                ))}
+              </List>
             </Box>
           )}
         </Paper>

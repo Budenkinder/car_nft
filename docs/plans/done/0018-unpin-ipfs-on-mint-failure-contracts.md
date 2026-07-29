@@ -1,8 +1,8 @@
 # Plan 0018 — Unpin IPFS entry on mint failure — Contracts
 
 - **ADR:** `docs/adr/0018-unpin-ipfs-on-mint-failure.md`
-- **Paired plan:** `docs/plans/in-progress/0018-unpin-ipfs-on-mint-failure-frontend.md`
-- **Status:** in-progress
+- **Paired plan:** `docs/plans/done/0018-unpin-ipfs-on-mint-failure-frontend.md`
+- **Status:** done
 - **Date:** 2026-07-26
 
 ## Scope and Goals

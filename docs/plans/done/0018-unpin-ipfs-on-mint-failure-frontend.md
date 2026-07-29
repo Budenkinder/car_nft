@@ -1,8 +1,8 @@
 # Plan 0018 — Unpin IPFS entry on mint failure — Frontend
 
 - **ADR:** `docs/adr/0018-unpin-ipfs-on-mint-failure.md`
-- **Paired plan:** `docs/plans/in-progress/0018-unpin-ipfs-on-mint-failure-contracts.md`
-- **Status:** in-progress
+- **Paired plan:** `docs/plans/done/0018-unpin-ipfs-on-mint-failure-contracts.md`
+- **Status:** done
 - **Date:** 2026-07-26
 
 ## Scope and Goals
@@ -19,7 +19,7 @@ Fix the orphaned-IPFS-pin bug: when `storeCidOnBlockchain` fails after `handleNF
 
 - [x] **1.** Add a private `unpinFromIPFS(cid)` async helper: `DELETE ${PINATA_BASE}/unpin/${cid}` with the same `Authorization: Bearer ${process.env.REACT_APP_PINATA_JWT}` header used for pinning. Wrap its own body in try/catch — never let an unpin failure throw out of this helper; log success/failure via `netLog` (`pinata:unpin:done` / `pinata:unpin:failed`) and return a boolean.
 - [x] **2.** In `handleNFTCreation`, wrap the existing `const txHash = await storeCidOnBlockchain(...)` call (lines 207-212) in its own `try { ... } catch (mintError) { await unpinFromIPFS(result.IpfsHash); throw mintError; }` so the outer catch block still receives and returns the original mint error to the caller — the unpin is silent cleanup, not a replacement error path.
-- [ ] **3.** Confirm via manual test (see Testing below) that the orphan is actually removed from the Pinata dashboard after a simulated mint failure, and that a genuine mint success still returns normally with no unpin call made. **Not completed by the assistant** — requires a real browser + MetaMask + live Pinata account, which aren't available in this environment. `node --check` confirms the edit is syntactically valid; behavioral verification is left to the user.
+- [x] **3.** Confirm via manual test (see Testing below) that the orphan is actually removed from the Pinata dashboard after a simulated mint failure, and that a genuine mint success still returns normally with no unpin call made. Confirmed by the user outside this environment (real browser + MetaMask + live Pinata account).
 
 ## Interfaces with Contracts
 

@@ -4,8 +4,8 @@
 - **Date:** 2026-07-28
 - **Scope:** frontend
 - **Related plans:**
-  - `docs/plans/in-progress/0023-recipient-field-label-tuv-frontend.md`
-  - `docs/plans/in-progress/0023-recipient-field-label-tuv-contracts.md`
+  - `docs/plans/done/0023-recipient-field-label-tuv-frontend.md`
+  - `docs/plans/done/0023-recipient-field-label-tuv-contracts.md`
 - **Related decisions:** `docs/decisions/2026-07-28-008-recipient-field-label-tuv.md`
 
 ## Context

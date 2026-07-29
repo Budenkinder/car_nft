@@ -1,8 +1,8 @@
 # Plan 0022 — Document the compensating-unpin behavior in README's Architecture write flow — Frontend
 
 - **ADR:** `docs/adr/0022-document-compensating-unpin-in-readme.md`
-- **Paired plan:** `docs/plans/in-progress/0022-document-compensating-unpin-in-readme-contracts.md`
-- **Status:** in-progress
+- **Paired plan:** `docs/plans/done/0022-document-compensating-unpin-in-readme-contracts.md`
+- **Status:** done
 - **Date:** 2026-07-28
 
 > Plan files live in a subfolder named after their `Status:` value (`draft/`, `approved/`, `in-progress/`, `done/`, `rejected/`). New plans start in `docs/plans/draft/`. On every status transition, both files in the trio move together via `git mv`, and the ADR's `Related plans:` paths are rewritten in the same change. See [CLAUDE.md](../../../CLAUDE.md) for the full workflow.

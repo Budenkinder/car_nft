@@ -4,6 +4,22 @@ One line per decision file under `docs/decisions/`. Newest first.
 
 Format: `- YYYY-MM-DD — [Title](YYYY-MM-DD-NNN-slug.md) — scope: <frontend|contracts|both> — status: <proposed|accepted|superseded>`
 
+- 2026-07-29 — [Plan 0027's manual browser verification deferred to after dev → main merge](2026-07-29-011-plan-0027-manual-test-deferred-to-post-merge.md) — scope: both — status: accepted
+- 2026-07-29 — [Backfill Sepolia's `deployedAtBlock` via `eth_getCode` binary search, and chunk event-log queries to stay under RPC range/rate limits](2026-07-29-010-backfill-sepolia-deployed-at-block.md) — scope: both — status: accepted
+- 2026-07-29 — [Plan 0027 transitioned draft → in-progress](2026-07-29-009-plan-0027-draft-to-in-progress.md) — scope: both — status: accepted
+- 2026-07-29 — [Plan 0026 transitioned in-progress → done; ADR 0026 bumped proposed → accepted](2026-07-29-008-plan-0026-in-progress-to-done.md) — scope: frontend — status: accepted
+- 2026-07-29 — [Plan 0026 transitioned draft → in-progress](2026-07-29-007-plan-0026-draft-to-in-progress.md) — scope: frontend — status: accepted
+- 2026-07-29 — [Plan 0025 transitioned in-progress → done](2026-07-29-006-plan-0025-in-progress-to-done.md) — scope: frontend — status: accepted
+- 2026-07-29 — [Plan 0024 transitioned in-progress → done](2026-07-29-005-plan-0024-in-progress-to-done.md) — scope: frontend — status: accepted
+- 2026-07-29 — [Plan 0022 transitioned in-progress → done](2026-07-29-004-plan-0022-in-progress-to-done.md) — scope: frontend — status: accepted
+- 2026-07-29 — [Plan 0023 transitioned in-progress → done](2026-07-29-003-plan-0023-in-progress-to-done.md) — scope: frontend — status: accepted
+- 2026-07-29 — [Plan 0020 transitioned in-progress → done](2026-07-29-002-plan-0020-in-progress-to-done.md) — scope: contracts — status: accepted
+- 2026-07-29 — [Plan 0018 transitioned in-progress → done](2026-07-29-001-plan-0018-in-progress-to-done.md) — scope: frontend — status: accepted
+- 2026-07-28 — [Reconstruct per-VIN transaction provenance from existing `CidStored` events, not off-chain storage](2026-07-28-014-nft-transaction-provenance-link.md) — scope: both — status: proposed
+- 2026-07-28 — [Clear "Create or Update" form fields after a successful new-VIN registration, not after updates](2026-07-28-013-clear-form-after-successful-registration.md) — scope: frontend — status: proposed
+- 2026-07-28 — [README's "Using the app" step synced to the current recipient field label](2026-07-28-012-readme-stale-recipient-label.md) — scope: frontend — status: accepted
+- 2026-07-28 — [Plan 0024 transitioned draft → in-progress and executed](2026-07-28-011-plan-0024-draft-to-in-progress.md) — scope: both — status: accepted
+- 2026-07-28 — [Document CRT MetaMask manual-import requirement, and fix stale Sepolia reference addresses in the same section](2026-07-28-010-readme-crt-metamask-import.md) — scope: both — status: accepted
 - 2026-07-28 — [Plan 0023 transitioned draft → in-progress and executed](2026-07-28-009-plan-0023-draft-to-in-progress.md) — scope: frontend — status: accepted
 - 2026-07-28 — [Relabel recipient field to "TÜV Car Inspection Wallet Address (recipient)"](2026-07-28-008-recipient-field-label-tuv.md) — scope: frontend — status: accepted
 - 2026-07-28 — [Plan 0022 transitioned draft → in-progress and completed](2026-07-28-007-plan-0022-draft-to-in-progress.md) — scope: frontend — status: accepted
