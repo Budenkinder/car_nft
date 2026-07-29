@@ -2,9 +2,9 @@
   "network": "sepolia",
   "chainId": "11155111",
   "deployer": "0x2c2f4d8EE1976B4f4fDC46B4B8fCb6E9A60A88d6",
-  "rewardToken": "0xABdC5742FFe7E34Af79f08E46D099Fd9bE3bC68c",
-  "registry": "0x089711b304ad2E279843588F7051AFe59797CdB8",
+  "rewardToken": "0xF592bF52FAcfBB7706ca79d040E74e5521E98FDe",
+  "registry": "0x9e23Ec4547297066bE459a428C7BE6A8eC7ac506",
   "initialMinter": "0x2c2f4d8EE1976B4f4fDC46B4B8fCb6E9A60A88d6",
-  "deployedAt": "2026-07-28T21:53:37.005Z",
-  "deployedAtBlock": 11371335
+  "deployedAt": "2026-07-29T20:40:02.379Z",
+  "deployedAtBlock": 11377881
 }
