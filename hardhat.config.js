@@ -23,6 +23,11 @@ export default defineConfig({
       evmVersion: "cancun",
       optimizer: { enabled: true, runs: 200 },
     },
+    // Hardhat 3 only emits artifacts for "root" files under contracts/ by
+    // default; ERC1967Proxy is never imported by our own contracts (it's
+    // deployed directly from scripts/deploy.js and test fixtures), so it
+    // must be listed explicitly to get an artifact. See ADR 0028.
+    npmFilesToBuild: ["@openzeppelin/contracts/proxy/ERC1967/ERC1967Proxy.sol"],
   },
   networks,
   test: {

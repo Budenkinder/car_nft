@@ -7,19 +7,16 @@ import "@openzeppelin/contracts-upgradeable/proxy/utils/UUPSUpgradeable.sol";
 import "@openzeppelin/contracts/proxy/utils/Initializable.sol";
 import "@openzeppelin/contracts/token/ERC20/IERC20.sol";
 
-/// @title VinCidRegistry
-/// @notice One NFT per VIN. The tokenURI points at the latest IPFS CID for the
-///         car's repair history. Only the `minter` (a registry operator address,
-///         separate from the contract `owner`) may mint new VIN NFTs, and the
-///         NFT is assigned to a `recipient` argument supplied by the minter —
-///         typically the car owner's wallet. Updates to an existing record are
-///         open in this POC build.
-/// @dev Upgradeable via UUPS behind an `ERC1967Proxy` (see ADR 0028) so that
-///      registered VIN/CID data survives future logic upgrades instead of
-///      resetting on every redeploy. Any future version of this contract must
-///      only APPEND new state after `__gap` (shrinking it accordingly) — never
-///      reorder or remove the fields below, or an upgrade will corrupt storage.
-contract VinCidRegistry is
+/// @title VinCidRegistryV2Mock
+/// @notice Test-only. Stands in for "the next version" of VinCidRegistry: same
+///         storage layout and same external functions through `minter`, plus
+///         one appended field (consuming one slot of the real contract's
+///         storage gap) and a `versionTag()` view. Used solely by
+///         test/VinCidRegistry.upgrade.test.js to prove that upgrading a live
+///         proxy to a new implementation preserves all pre-upgrade state and
+///         keeps existing functions working. Never deployed by
+///         scripts/deploy.js or scripts/upgrade.js.
+contract VinCidRegistryV2Mock is
     Initializable,
     ERC721URIStorageUpgradeable,
     OwnableUpgradeable,
@@ -31,41 +28,24 @@ contract VinCidRegistry is
 
     IERC20 public rewardToken;
     uint256 public rewardAmount;
-
-    /// @notice Address authorized to mint new VIN NFTs. Separate from `owner()`
-    ///         so a back-office "registry operator" can onboard cars without
-    ///         holding admin powers (or vice versa).
     address public minter;
+
+    // New in this "version" — occupies the first slot of what was
+    // VinCidRegistry's __gap. Starting empty (not corrupted with any
+    // pre-upgrade field's data) is exactly what the upgrade test asserts.
+    string public newFeatureFlag;
 
     event CidStored(string vin, string cid, uint256 tokenId);
     event TokensWithdrawn(address indexed token, address indexed to, uint256 amount);
     event MinterChanged(address indexed previousMinter, address indexed newMinter);
+
+    uint256[49] private __gap;
 
     /// @custom:oz-upgrades-unsafe-allow constructor
     constructor() {
         _disableInitializers();
     }
 
-    /// @notice Replaces the constructor for an upgradeable contract. Callable
-    ///         exactly once, immediately after the proxy is deployed.
-    function initialize(address rewardTokenAddress, address initialMinter) public initializer {
-        __ERC721_init("VinCidRegistry", "VIN");
-        __ERC721URIStorage_init();
-        __Ownable_init(msg.sender);
-
-        require(initialMinter != address(0), "Minter required");
-        rewardToken = IERC20(rewardTokenAddress);
-        minter = initialMinter;
-        emit MinterChanged(address(0), initialMinter);
-    }
-
-    /// @notice Mint a new car NFT (first call for a VIN) or update the CID on
-    ///         an existing one. Mints are gated to the `minter` address and the
-    ///         NFT is assigned to `recipient`. Updates are open in this POC.
-    /// @param vin       17-character VIN.
-    /// @param cid       IPFS CID for the metadata JSON. Stored as `ipfs://<cid>`.
-    /// @param recipient Wallet that receives the NFT on a new mint. Ignored
-    ///                  on updates (pass `address(0)` if you like — it isn't read).
     function storeCid(string calldata vin, string calldata cid, address recipient) external {
         require(bytes(vin).length == 17, "VIN must be 17 characters");
         require(bytes(cid).length > 0, "CID required");
@@ -78,14 +58,12 @@ contract VinCidRegistry is
             require(recipient != address(0), "Recipient required");
         }
 
-        // Effects: write all state before any external interaction.
         if (isNewMint) {
             vinKeys.push(vin);
             tokenIdToVin[tokenId] = vin;
         }
         vinToCid[vin] = cid;
 
-        // Interactions: _safeMint may invoke onERC721Received on a contract receiver.
         if (isNewMint) {
             _safeMint(recipient, tokenId);
         }
@@ -93,25 +71,19 @@ contract VinCidRegistry is
 
         emit CidStored(vin, cid, tokenId);
 
-        // Rewards only on mint — prevents CRT drain on repeat updates. Paid to
-        // the new NFT holder so the operator (minter) isn't paying themselves.
         if (isNewMint) {
             _payReward(recipient);
         }
     }
 
-    /// @notice Owner-only: change the minter address.
     function setMinter(address newMinter) external onlyOwner {
         require(newMinter != address(0), "Minter required");
         emit MinterChanged(minter, newMinter);
         minter = newMinter;
     }
 
-    /// @notice Withdraw tokens held by the registry. Use this to recover funds
-    ///         after `setRewardToken` is called or to drain leftover balances.
     function withdrawToken(IERC20 token, address to, uint256 amount) external onlyOwner {
         require(to != address(0), "Invalid recipient");
-        // Handle non-standard ERC-20s: succeed if call returns nothing or returns true.
         (bool ok, bytes memory data) = address(token).call(
             abi.encodeWithSelector(IERC20.transfer.selector, to, amount)
         );
@@ -143,6 +115,14 @@ contract VinCidRegistry is
         rewardAmount = amount;
     }
 
+    function versionTag() external pure returns (string memory) {
+        return "v2-mock";
+    }
+
+    function setNewFeatureFlag(string calldata value) external onlyOwner {
+        newFeatureFlag = value;
+    }
+
     function _tokenIdFromVin(string memory vin) internal pure returns (uint256) {
         return uint256(keccak256(bytes(vin)));
     }
@@ -152,13 +132,5 @@ contract VinCidRegistry is
         try rewardToken.transfer(to, rewardAmount) {} catch {}
     }
 
-    /// @dev Gates `upgradeToAndCall` (inherited from `UUPSUpgradeable`) to the
-    ///      contract owner. `minter` (mint authority) and `owner` (upgrade
-    ///      authority) remain distinct roles.
     function _authorizeUpgrade(address newImplementation) internal override onlyOwner {}
-
-    // Storage gap: reserved slots so a future upgrade can append new state
-    // variables above without shifting the layout of the fields declared
-    // above. Shrink this array (never remove it entirely) as fields are added.
-    uint256[50] private __gap;
 }
