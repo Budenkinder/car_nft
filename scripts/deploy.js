@@ -3,19 +3,16 @@ import fs from "fs";
 import path from "path";
 import { fileURLToPath } from "url";
 import { network } from "hardhat";
+import { upsertEnvVar, syncFrontendAbi, writeSepoliaDeployLog } from "./deployUtils.js";
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
+const rootDir = path.join(__dirname, "..");
 
-// Upserts `KEY=value` in an env file: replaces the line if present, appends otherwise.
-function upsertEnvVar(envPath, key, value) {
-  const existing = fs.existsSync(envPath) ? fs.readFileSync(envPath, "utf8") : "";
-  const linePattern = new RegExp(`^${key}=.*$`, "m");
-  const next = linePattern.test(existing)
-    ? existing.replace(linePattern, `${key}=${value}`)
-    : `${existing.replace(/\s+$/, "")}\n${key}=${value}\n`;
-  fs.writeFileSync(envPath, next);
-}
-
+// One-time bootstrap per network: deploys CarRewardToken, deploys the
+// VinCidRegistry implementation, and deploys an ERC1967Proxy in front of it
+// (calling `initialize` as the proxy's constructor calldata). All LATER
+// upgrades go through `scripts/upgrade.js`, which swaps only the
+// implementation and never touches the proxy address. See ADR 0028.
 async function main() {
   const { ethers, networkName } = await network.create();
   const { chainId } = await ethers.provider.getNetwork();
@@ -26,6 +23,26 @@ async function main() {
   console.log("Deployer:", deployer.address);
   console.log("Balance: ", ethers.formatEther(balance), "ETH");
 
+  const dir = path.join(rootDir, "deployments");
+  fs.mkdirSync(dir, { recursive: true });
+  const artifactPath = path.join(dir, `${networkName}.json`);
+
+  // Guard: bootstrapping twice against the same network would silently spin
+  // up a second, disconnected registry (different proxy address) instead of
+  // upgrading the existing one. Use scripts/upgrade.js for that instead.
+  if (fs.existsSync(artifactPath) && process.env.FORCE_FRESH_DEPLOY !== "1") {
+    const existing = JSON.parse(fs.readFileSync(artifactPath, "utf8"));
+    if (existing.registry) {
+      console.error(
+        `\n${networkName} already has a bootstrapped registry at ${existing.registry} (see ${artifactPath}).\n` +
+          `Run \`npm run upgrade:${networkName}\` to change the implementation instead.\n` +
+          "Set FORCE_FRESH_DEPLOY=1 to bootstrap a brand-new, disconnected registry anyway (starts with empty storage)."
+      );
+      process.exitCode = 1;
+      return;
+    }
+  }
+
   // 1. Deploy the ERC-20 reward token (no constructor args).
   console.log("\nDeploying CarRewardToken...");
   const CarRewardToken = await ethers.getContractFactory("CarRewardToken");
@@ -34,25 +51,38 @@ async function main() {
   const rewardTokenAddress = await rewardToken.getAddress();
   console.log("CarRewardToken:", rewardTokenAddress);
 
-  // 2. Deploy the VIN registry. Constructor: (rewardTokenAddress, initialMinter)
+  // 2. Deploy the VinCidRegistry implementation, then an ERC1967Proxy in
+  //    front of it, calling initialize(rewardTokenAddress, initialMinter) as
+  //    the proxy's constructor calldata (replaces the old direct
+  //    VinCidRegistry.deploy(rewardTokenAddress, initialMinter) constructor call).
   const initialMinter = process.env.INITIAL_MINTER || deployer.address;
-  console.log("\nDeploying VinCidRegistry...");
+  console.log("\nDeploying VinCidRegistry implementation...");
+  const VinCidRegistry = await ethers.getContractFactory("VinCidRegistry");
+  const implementation = await VinCidRegistry.deploy();
+  await implementation.waitForDeployment();
+  const implementationAddress = await implementation.getAddress();
+  console.log("VinCidRegistry implementation:", implementationAddress);
+
+  console.log("\nDeploying ERC1967Proxy...");
   console.log("  rewardToken:  ", rewardTokenAddress);
   console.log("  initialMinter:", initialMinter);
-  const VinCidRegistry = await ethers.getContractFactory("VinCidRegistry");
-  const registry = await VinCidRegistry.deploy(rewardTokenAddress, initialMinter);
-  await registry.waitForDeployment();
-  const registryAddress = await registry.getAddress();
-  console.log("VinCidRegistry:", registryAddress);
+  const initData = VinCidRegistry.interface.encodeFunctionData("initialize", [
+    rewardTokenAddress,
+    initialMinter,
+  ]);
+  const Proxy = await ethers.getContractFactory("ERC1967Proxy");
+  const proxy = await Proxy.deploy(implementationAddress, initData);
+  await proxy.waitForDeployment();
+  const registryAddress = await proxy.getAddress();
+  console.log("VinCidRegistry (proxy):", registryAddress);
+  const registry = VinCidRegistry.attach(registryAddress);
 
   // Deployment block, so the frontend can bound its `CidStored` event scan
-  // with `fromBlock` instead of scanning from genesis. `deploymentTransaction()`
-  // returns the response captured at broadcast time, which may predate mining;
-  // fall back to `.wait()` (already-mined, so this resolves immediately) when
-  // `blockNumber` isn't populated yet.
-  const deployTx = registry.deploymentTransaction();
-  const deployedAtBlock =
-    deployTx?.blockNumber ?? (await deployTx.wait()).blockNumber;
+  // with `fromBlock` instead of scanning from genesis (ADR 0027). This is the
+  // proxy's own deployment block — `CidStored` is always emitted at the
+  // proxy address regardless of which implementation is currently active.
+  const deployTx = proxy.deploymentTransaction();
+  const deployedAtBlock = deployTx?.blockNumber ?? (await deployTx.wait()).blockNumber;
 
   // 3. Persist addresses BEFORE the funding step — so a funding failure does
   //    not strand the deployed addresses in console output only.
@@ -62,13 +92,11 @@ async function main() {
     deployer: deployer.address,
     rewardToken: rewardTokenAddress,
     registry: registryAddress,
+    implementation: implementationAddress,
     initialMinter,
     deployedAt: new Date().toISOString(),
     deployedAtBlock,
   };
-  const dir = path.join(__dirname, "..", "deployments");
-  fs.mkdirSync(dir, { recursive: true });
-  const artifactPath = path.join(dir, `${networkName}.json`);
   fs.writeFileSync(artifactPath, JSON.stringify(artifact, null, 2));
   console.log("\nDeployment artifact written:", artifactPath);
 
@@ -102,7 +130,7 @@ async function main() {
   }
 
   console.log("\n--- Frontend wiring ---");
-  const envPath = path.join(__dirname, "..", "frontend", ".env.local");
+  const envPath = path.join(rootDir, "frontend", ".env.local");
   if (networkName === "localhost" || networkName === "hardhat") {
     const key = "REACT_APP_SMART_CONTRACT_ADDRESS_LOCAL";
     const blockKey = "REACT_APP_SMART_CONTRACT_DEPLOY_BLOCK_LOCAL";
@@ -122,7 +150,10 @@ async function main() {
     );
     console.log(`  REACT_APP_SMART_CONTRACT_ADDRESS=${registryAddress}`);
     console.log(`  REACT_APP_SMART_CONTRACT_DEPLOY_BLOCK=${deployedAtBlock}`);
-    console.log("Then trigger a redeploy of `main` so the new bundle picks it up.");
+    console.log(
+      "Then trigger a redeploy of `main` so the new bundle picks it up. This is a one-time step:" +
+        " future upgrades (`npm run upgrade:sepolia`) leave this address unchanged."
+    );
   } else {
     console.log(`Add a ${networkName} entry to frontend/src/utils/contract_utils.js:`);
     console.log(registryAddress);
@@ -133,59 +164,24 @@ async function main() {
   if (networkName === "sepolia") {
     console.log("\n--- Sepolia deploy log ---");
     const date = artifact.deployedAt.slice(0, 10);
-    const etherscan = (addr) => `https://sepolia.etherscan.io/address/${addr}`;
-    const logDir = path.join(__dirname, "..", "docs", "deployments");
-    fs.mkdirSync(logDir, { recursive: true });
-    const logPath = path.join(
-      logDir,
-      `sepolia_contract_deploy_addresses_${date}.md`
-    );
-    const logBody = `# Sepolia Contract Deployment — ${date}
-
-- **Network:** ${networkName} (chainId ${artifact.chainId})
-- **Deployer:** ${artifact.deployer}
-- **Deployed at:** ${artifact.deployedAt}
-- **Deployed at block:** ${artifact.deployedAtBlock}
-
-## Contract Addresses
-
-| Contract | Address (click for Etherscan) |
-|----------|-------------------------------|
-| VinCidRegistry | [\`${registryAddress}\`](${etherscan(registryAddress)}) |
-| CarRewardToken | [\`${rewardTokenAddress}\`](${etherscan(rewardTokenAddress)}) |
-`;
-    fs.writeFileSync(logPath, logBody);
+    const logPath = writeSepoliaDeployLog(rootDir, {
+      kind: "bootstrap",
+      date,
+      chainId: artifact.chainId,
+      actor: artifact.deployer,
+      timestamp: artifact.deployedAt,
+      deployedAtBlock: artifact.deployedAtBlock,
+      registryAddress,
+      implementationAddress,
+      rewardTokenAddress,
+    });
     console.log(`Wrote ${logPath}`);
   }
 
   // Sync the frontend ABI from the freshly compiled VinCidRegistry artifact, so
   // the UI's ABI never drifts from the deployed contract. Runs on every network.
   console.log("\n--- Frontend ABI sync ---");
-  const abiSrc = path.join(
-    __dirname,
-    "..",
-    "artifacts",
-    "contracts",
-    "car_nft_sc.sol",
-    "VinCidRegistry.json"
-  );
-  if (!fs.existsSync(abiSrc)) {
-    console.error(
-      `Compiled artifact not found at ${abiSrc}.\nRun \`npm run compile\` before deploying.`
-    );
-    process.exitCode = 1;
-    return;
-  }
-  const abiDest = path.join(
-    __dirname,
-    "..",
-    "frontend",
-    "src",
-    "utils",
-    "contract_abi.json"
-  );
-  const { abi } = JSON.parse(fs.readFileSync(abiSrc, "utf8"));
-  fs.writeFileSync(abiDest, JSON.stringify(abi, null, 2) + "\n");
+  const abiDest = syncFrontendAbi(rootDir);
   console.log(`Updated ${abiDest}`);
 }
 

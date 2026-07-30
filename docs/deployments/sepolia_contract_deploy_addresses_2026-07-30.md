@@ -1,0 +1,14 @@
+# Sepolia Contract Deployment — 2026-07-30
+
+- **Network:** sepolia (chainId 11155111)
+- **Deployer:** 0x2c2f4d8EE1976B4f4fDC46B4B8fCb6E9A60A88d6
+- **Deployed at:** 2026-07-30T21:44:25.108Z
+- **Deployed at block (proxy):** 11385148
+
+## Contract Addresses
+
+| Contract | Address (click for Etherscan) |
+|----------|-------------------------------|
+| VinCidRegistry (proxy) | [`0x9e30596A7C80754cd5149A465e89758CAdB0F8B3`](https://sepolia.etherscan.io/address/0x9e30596A7C80754cd5149A465e89758CAdB0F8B3) |
+| VinCidRegistry (implementation) | [`0xdE69ad20A6169bEf874488C6306361Cfd9cbE264`](https://sepolia.etherscan.io/address/0xdE69ad20A6169bEf874488C6306361Cfd9cbE264) |
+| CarRewardToken | [`0x854966B53849f7fF12Bad90293E1eD2DcADc913e`](https://sepolia.etherscan.io/address/0x854966B53849f7fF12Bad90293E1eD2DcADc913e) |

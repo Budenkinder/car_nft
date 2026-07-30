@@ -1,6 +1,6 @@
 import { expect } from "chai";
 import { network } from "hardhat";
-import { deployRegistryFixture } from "./fixtures.js";
+import { deployRegistryFixture, deployRegistryProxy } from "./fixtures.js";
 
 const { ethers, networkHelpers } = await network.create();
 
@@ -28,23 +28,41 @@ function tokenIdFor(vin) {
 }
 
 describe("VinCidRegistry", function () {
-  describe("constructor", function () {
+  describe("initialize", function () {
     it("reverts when initialMinter is the zero address", async function () {
       const { tokenAddress } = await networkHelpers.loadFixture(fixture);
-      const Registry = await ethers.getContractFactory("VinCidRegistry");
       await expect(
-        Registry.deploy(tokenAddress, ethers.ZeroAddress)
+        deployRegistryProxy(ethers, tokenAddress, ethers.ZeroAddress)
       ).to.be.revertedWith("Minter required");
     });
 
     it("sets the minter and emits MinterChanged on deploy", async function () {
       const { tokenAddress, minter } = await networkHelpers.loadFixture(fixture);
-      const Registry = await ethers.getContractFactory("VinCidRegistry");
-      const registry = await Registry.deploy(tokenAddress, minter.address);
-      await expect(registry.deploymentTransaction())
+      const { registry, proxyDeploymentTransaction } = await deployRegistryProxy(
+        ethers,
+        tokenAddress,
+        minter.address
+      );
+      await expect(proxyDeploymentTransaction)
         .to.emit(registry, "MinterChanged")
         .withArgs(ethers.ZeroAddress, minter.address);
       expect(await registry.minter()).to.equal(minter.address);
+    });
+
+    it("reverts when called a second time on an already-initialized proxy", async function () {
+      const { registry, tokenAddress, minter } = await networkHelpers.loadFixture(fixture);
+      await expect(
+        registry.initialize(tokenAddress, minter.address)
+      ).to.be.revertedWithCustomError(registry, "InvalidInitialization");
+    });
+
+    it("reverts when called directly on the implementation contract (not through the proxy)", async function () {
+      const { tokenAddress, minter } = await networkHelpers.loadFixture(fixture);
+      const Registry = await ethers.getContractFactory("VinCidRegistry");
+      const implementation = await Registry.deploy();
+      await expect(
+        implementation.initialize(tokenAddress, minter.address)
+      ).to.be.revertedWithCustomError(implementation, "InvalidInitialization");
     });
   });
 
