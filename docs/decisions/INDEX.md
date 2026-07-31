@@ -4,6 +4,15 @@ One line per decision file under `docs/decisions/`. Newest first.
 
 Format: `- YYYY-MM-DD — [Title](YYYY-MM-DD-NNN-slug.md) — scope: <frontend|contracts|both> — status: <proposed|accepted|superseded>`
 
+- 2026-07-31 — [Link plan trios 0029–0033 to their GitHub tracking issues (#35–#39), and add the field to the plan templates](2026-07-31-009-link-plans-to-github-issues.md) — scope: both — status: accepted
+- 2026-07-31 — [Ship in-app, client-computed notifications with no new backend, deferring real push/email to a future ADR](2026-07-31-008-notifications-in-app-chosen.md) — scope: both — status: proposed
+- 2026-07-31 — [Standalone, non-upgradeable `CarSaleEscrow` with pull-payment, over building marketplace logic into `VinCidRegistry` or pushing payment directly to the seller](2026-07-31-007-escrow-marketplace-chosen.md) — scope: both — status: proposed
+- 2026-07-31 — [Call the existing inherited ERC-721 `safeTransferFrom` directly, rather than adding a custom wrapper function](2026-07-31-006-simple-transfer-flow-chosen.md) — scope: both — status: proposed
+- 2026-07-31 — [Adopt an append-only typed vehicle-record array with a separate verifier role, over relying on event reconstruction alone](2026-07-31-005-vehicle-record-entries-chosen.md) — scope: both — status: proposed
+- 2026-07-31 — [Add a router + read-only RPC public lookup page, over a query-param view or pointing users at Etherscan](2026-07-31-004-ownership-history-public-lookup-chosen.md) — scope: both — status: proposed
+- 2026-07-31 — [Defer exercising `npm run upgrade:sepolia` until a real contract change ships](2026-07-31-003-defer-sepolia-upgrade-test.md) — scope: contracts — status: accepted
+- 2026-07-31 — [End-to-end verification: Vercel Production against the proxy-backed Sepolia registry works](2026-07-31-002-sepolia-vercel-verification-confirmed.md) — scope: both — status: accepted
+- 2026-07-31 — [Plan 0028 transitioned in-progress → done; ADR 0028 bumped proposed → accepted](2026-07-31-001-plan-0028-in-progress-to-done.md) — scope: both — status: accepted
 - 2026-07-30 — [Bootstrapped the UUPS proxy on Sepolia](2026-07-30-003-sepolia-proxy-bootstrap.md) — scope: contracts — status: accepted
 - 2026-07-30 — [Plan 0028 transitioned draft → in-progress; autonomous implementation begins](2026-07-30-002-plan-0028-draft-to-in-progress.md) — scope: both — status: accepted
 - 2026-07-30 — [Accept the current live Sepolia registry's data as a one-time loss at proxy cutover](2026-07-30-001-accept-sepolia-data-loss-at-cutover.md) — scope: contracts — status: accepted

@@ -1,8 +1,8 @@
 # Plan 0028 — UUPS proxy for VinCidRegistry — Frontend
 
 - **ADR:** `docs/adr/0028-vin-registry-uups-proxy.md`
-- **Paired plan:** `docs/plans/in-progress/0028-vin-registry-uups-proxy-contracts.md`
-- **Status:** in-progress
+- **Paired plan:** `docs/plans/done/0028-vin-registry-uups-proxy-contracts.md`
+- **Status:** done
 - **Date:** 2026-07-29
 
 > Plan files live in a subfolder named after their `Status:` value (`draft/`, `approved/`, `in-progress/`, `done/`, `rejected/`). New plans start in `docs/plans/draft/`. On every status transition, both files in the trio move together via `git mv`, and the ADR's `Related plans:` paths are rewritten in the same change. See [CLAUDE.md](../../../CLAUDE.md) for the full workflow.
@@ -22,8 +22,8 @@ No functional frontend code changes. The proxy pattern is transparent to callers
 ## Tasks
 
 - [x] **1.** Updated the comments in `frontend/.env.example` above `REACT_APP_SMART_CONTRACT_ADDRESS`, `REACT_APP_SMART_CONTRACT_ADDRESS_LOCAL`, and the `DEPLOY_BLOCK` vars to describe the new bootstrap-once/upgrade-preserves-address behavior.
-- [x] **2.** *(Partially done — see note.)* After the paired contracts plan's local bootstrap + upgrade cycle, confirmed at the contract-call level (the same calls `pinata_ipfs_nft_service.js` makes — `getAllVins`/`getCidByVin`) that a VIN registered pre-upgrade is still readable post-upgrade, and that `npm start` compiles cleanly against the resynced ABI with zero frontend code changes. **Could not complete full wallet-driven browser click-through** ("Load Car NFT" / "Show all registered NFTs" / register-a-new-VIN clicked through an actual page with a connected wallet) — this container has no browser and no `chromium-cli`, and driving a Web3 wallet-connect flow headlessly was out of scope to build from scratch for this verification step. Recommend the user do one manual click-through against the local proxy-backed registry (address already in `frontend/.env.local`) before treating this as fully verified.
-- [ ] **3.** *(Sepolia bootstrapped 2026-07-30 — this step is now the only thing left.)* Update `REACT_APP_SMART_CONTRACT_ADDRESS=0x9e30596A7C80754cd5149A465e89758CAdB0F8B3` and `REACT_APP_SMART_CONTRACT_DEPLOY_BLOCK=11385148` (per ADR 0027) in Vercel's Production environment variables, then trigger a redeploy of `main` so the new bundle picks it up. This is a manual Vercel-dashboard action outside the tools available in this session — the user needs to do it directly. Once done, this is a one-time step going forward: future `npm run upgrade:sepolia` runs leave this address unchanged.
+- [x] **2.** *(Fully verified 2026-07-31 — see note.)* After the paired contracts plan's local bootstrap + upgrade cycle, confirmed at the contract-call level (the same calls `pinata_ipfs_nft_service.js` makes — `getAllVins`/`getCidByVin`) that a VIN registered pre-upgrade is still readable post-upgrade, and that `npm start` compiles cleanly against the resynced ABI with zero frontend code changes. This session's headless container had no browser and no `chromium-cli`, so the full wallet-driven browser click-through was left as a recommendation for the user. **User completed it 2026-07-31** against the redeployed Vercel Production app (Sepolia proxy-backed registry): loading CIDs returned the registered VINs as expected. See `docs/decisions/2026-07-31-002-sepolia-vercel-verification-confirmed.md`.
+- [x] **3.** *(User confirmed done 2026-07-31.)* Updated `REACT_APP_SMART_CONTRACT_ADDRESS=0x9e30596A7C80754cd5149A465e89758CAdB0F8B3` and `REACT_APP_SMART_CONTRACT_DEPLOY_BLOCK=11385148` (per ADR 0027) in Vercel's Production environment variables and redeployed `main`. Manual Vercel-dashboard action performed by the user directly (outside the tools available in this session). This is a one-time step going forward: future `npm run upgrade:sepolia` runs leave this address unchanged.
 
 ## Interfaces with Contracts
 
