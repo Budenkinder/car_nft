@@ -47,6 +47,7 @@ Reconstruct transaction provenance from on-chain event history rather than persi
 
 ## References
 
+- [#42](https://github.com/Budenkinder/car_nft/issues/42) — tracking issue, backfilled 2026-08-02 under ADR 0034's rule that every approved/in-progress trio carries one.
 - `contracts/car_nft_sc.sol:49-81` (`storeCid`, `CidStored` emission shared by mint and update paths).
 - `frontend/src/App.js:472-481` (existing transient `txHash` success banner — the only current tx-hash surface, and it's not persisted).
 - ADR 0005 (`docs/adr/0005-deploy-script-frontend-sync.md`) — precedent for `scripts/deploy.js` syncing values into `frontend/.env.local`, extended here with one more field.

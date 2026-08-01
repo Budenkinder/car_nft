@@ -77,7 +77,23 @@ Rules — **strict**, not optional:
   3. Update both plan files' frontmatter `Status:` field to match the new folder.
   4. Update both plan files' `**Paired plan:**` path to the new folder.
   5. Rewrite the matching ADR's `Related plans:` paths to point at the new folder.
-  6. Write a decision log entry recording the transition (see section 4). The decision log entry is the checkpoint where stale links get caught.
+  6. **If the new folder is `approved/`:** file the GitHub tracking issue (see the next bullet) and write its link into both plan files and the ADR.
+  7. **If the new folder is `done/` or `rejected/`:** close that issue — `gh issue close <NN> --repo Budenkinder/car_nft`, adding `--reason "not planned"` for `rejected/`.
+  8. Write a decision log entry recording the transition (see section 4). The decision log entry is the checkpoint where stale links get caught.
+- **Every approved plan has a GitHub issue.** On every entry into `approved/` — whether `draft → approved` or a trio created directly as approved — file an issue in `Budenkinder/car_nft`:
+
+  ```bash
+  gh issue create --repo Budenkinder/car_nft \
+    --title "<short description of the work> (ADR NNNN)" \
+    --body "<one-paragraph scope summary + repo-relative links to the ADR and both plan files>"
+  ```
+
+  Then add `**GitHub Issue:** [#NN](https://github.com/Budenkinder/car_nft/issues/NN)` to **both** plan files (right after `**Paired plan:**`, including the no-op side) and the same link to the ADR's `## References`.
+
+  - **Reuse, never duplicate.** If the trio already has an issue from `draft` time (0029–0033 carry #35–#39), link that one instead of filing a second.
+  - Filing an issue while a trio is still in `draft/` is allowed but not required. Approval is where it becomes mandatory.
+  - If `gh` is unavailable or unauthenticated, **stop the transition and surface the blocker** — per **No Exceptions**, this step is never silently skipped.
+  - The invariant: every plan file in `approved/` or `in-progress/` carries a live `GitHub Issue:` link, and every one of those issues is open.
 - **`rejected` is independent of ADR status.** A plan in `rejected/` does **not** force the ADR to `superseded`. It is valid for an ADR to stay `proposed` (or `accepted`) while its plan is `rejected` — that combination means "we considered this and decided not to ship".
 - **Look-back lives in `done/` and `rejected/`.** `ls docs/plans/done/` answers "what shipped"; `ls docs/plans/rejected/` answers "what did we walk away from and why". There is no separate archive system.
 

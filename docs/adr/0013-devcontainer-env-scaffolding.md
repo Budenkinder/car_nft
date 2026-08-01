@@ -48,4 +48,5 @@ Add `.devcontainer/setup.sh`, invoked from `postCreateCommand`, that idempotentl
 
 - ADR 0008 — `docs/adr/0008-readme-hardhat3-devcontainer-docs.md` (documented, but explicitly deferred, this exact `postCreateCommand` fix).
 - `.devcontainer/devcontainer.json`, `.env.example`, `frontend/.env.example` — the files this ADR scaffolds between.
+- [#41](https://github.com/Budenkinder/car_nft/issues/41) — tracking issue, backfilled 2026-08-02 under ADR 0034's rule that every approved trio carries one.
 - This session's discussion: minimal Pinata JWT scope is the legacy Pinning Services API's `pinJSONToIPFS` permission only (confirmed against `frontend/src/utils/pinata_ipfs_nft_service.js`, which only calls that one endpoint plus unauthenticated public-gateway reads).

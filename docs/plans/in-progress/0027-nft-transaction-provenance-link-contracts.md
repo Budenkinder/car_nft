@@ -2,6 +2,7 @@
 
 - **ADR:** `docs/adr/0027-nft-transaction-provenance-link.md`
 - **Paired plan:** `docs/plans/in-progress/0027-nft-transaction-provenance-link-frontend.md`
+- **GitHub Issue:** [#42](https://github.com/Budenkinder/car_nft/issues/42)
 - **Status:** in-progress
 - **Date:** 2026-07-28
 
