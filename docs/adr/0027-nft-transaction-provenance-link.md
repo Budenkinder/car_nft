@@ -1,11 +1,11 @@
 # ADR 0027: Link each VIN's NFT record to the on-chain transaction(s) that created/updated it
 
-- **Status:** proposed
+- **Status:** accepted
 - **Date:** 2026-07-28
 - **Scope:** both
 - **Related plans:**
-  - `docs/plans/in-progress/0027-nft-transaction-provenance-link-frontend.md`
-  - `docs/plans/in-progress/0027-nft-transaction-provenance-link-contracts.md`
+  - `docs/plans/done/0027-nft-transaction-provenance-link-frontend.md`
+  - `docs/plans/done/0027-nft-transaction-provenance-link-contracts.md`
 - **Related decisions:** `docs/decisions/2026-07-28-014-nft-transaction-provenance-link.md`
 
 ## Context

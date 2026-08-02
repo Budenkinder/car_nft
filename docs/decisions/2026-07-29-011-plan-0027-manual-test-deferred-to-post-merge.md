@@ -1,7 +1,7 @@
 ---
 date: 2026-07-29
 scope: both
-status: accepted
+status: superseded
 related_adr: 0027-nft-transaction-provenance-link
 supersedes: none
 ---

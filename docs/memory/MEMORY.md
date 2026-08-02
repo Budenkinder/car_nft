@@ -13,6 +13,7 @@ Format: `- [Title](relative/path.md) — one-line hook`
 
 - [Plans live in status-named subfolders](frontend/plan-status-folders.md) — draft/approved/in-progress/done/rejected; both plans in a trio move together when status changes (per ADR 0002).
 - [Approved plans get a GitHub issue](frontend/github-issue-on-plan-approval.md) — user rule 2026-08-01: entering `approved/` files an issue in Budenkinder/car_nft, linked from both plan files; closed on done/rejected (ADR 0034).
+- [Event queries must be chunked and bounded](frontend/event-queries-must-be-chunked.md) — RPC caps `eth_getLogs` at 10k blocks; use `getPastEventsChunked` + `getContractDeployBlock`, never a genesis scan (ADR 0027).
 - [Contract access uses web3.js + a service layer](frontend/web3js-contract-access-pattern.md) — frontend uses web3.js not ethers; all reads/writes funnel through pinata_ipfs_nft_service.js.
 - [Pinata: only the JWT is a real credential](frontend/pinata-jwt-only-credential.md) — REACT_APP_PINATA_JWT is the only Pinata secret read anywhere in the codebase; API Key/Secret have no reader.
 

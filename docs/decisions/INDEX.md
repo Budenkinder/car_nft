@@ -4,6 +4,7 @@ One line per decision file under `docs/decisions/`. Newest first.
 
 Format: `- YYYY-MM-DD — [Title](YYYY-MM-DD-NNN-slug.md) — scope: <frontend|contracts|both> — status: <proposed|accepted|superseded>`
 
+- 2026-08-02 — [Plan 0027 transitioned in-progress → done; ADR 0027 bumped proposed → accepted; issue #42 closed](2026-08-02-008-plan-0027-in-progress-to-done.md) — scope: both — status: accepted
 - 2026-08-02 — [Rejection of plan 0013 reverted; trio returned to `approved/` and issue #41 reopened](2026-08-02-007-plan-0013-rejected-back-to-approved.md) — scope: both — status: accepted
 - 2026-08-02 — [Plan 0013 (Dev Container `.env` scaffolding) rejected; issue #41 closed as not planned](2026-08-02-006-plan-0013-approved-to-rejected.md) — scope: both — status: superseded (by [2026-08-02-007](2026-08-02-007-plan-0013-rejected-back-to-approved.md))
 - 2026-08-02 — [Plan 0034 transitioned in-progress → done; ADR 0034 bumped proposed → accepted; issue #40 closed](2026-08-02-005-plan-0034-in-progress-to-done.md) — scope: both — status: accepted
@@ -25,7 +26,7 @@ Format: `- YYYY-MM-DD — [Title](YYYY-MM-DD-NNN-slug.md) — scope: <frontend|c
 - 2026-07-30 — [Plan 0028 transitioned draft → in-progress; autonomous implementation begins](2026-07-30-002-plan-0028-draft-to-in-progress.md) — scope: both — status: accepted
 - 2026-07-30 — [Accept the current live Sepolia registry's data as a one-time loss at proxy cutover](2026-07-30-001-accept-sepolia-data-loss-at-cutover.md) — scope: contracts — status: accepted
 - 2026-07-29 — [Adopt UUPS proxy (manual `ERC1967Proxy`, no `hardhat-upgrades` plugin) over Transparent proxy or a migration script](2026-07-29-012-vin-registry-uups-proxy-chosen.md) — scope: both — status: proposed
-- 2026-07-29 — [Plan 0027's manual browser verification deferred to after dev → main merge](2026-07-29-011-plan-0027-manual-test-deferred-to-post-merge.md) — scope: both — status: accepted
+- 2026-07-29 — [Plan 0027's manual browser verification deferred to after dev → main merge](2026-07-29-011-plan-0027-manual-test-deferred-to-post-merge.md) — scope: both — status: superseded (by [2026-08-02-008](2026-08-02-008-plan-0027-in-progress-to-done.md))
 - 2026-07-29 — [Backfill Sepolia's `deployedAtBlock` via `eth_getCode` binary search, and chunk event-log queries to stay under RPC range/rate limits](2026-07-29-010-backfill-sepolia-deployed-at-block.md) — scope: both — status: accepted
 - 2026-07-29 — [Plan 0027 transitioned draft → in-progress](2026-07-29-009-plan-0027-draft-to-in-progress.md) — scope: both — status: accepted
 - 2026-07-29 — [Plan 0026 transitioned in-progress → done; ADR 0026 bumped proposed → accepted](2026-07-29-008-plan-0026-in-progress-to-done.md) — scope: frontend — status: accepted

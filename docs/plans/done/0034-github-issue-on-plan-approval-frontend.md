@@ -37,7 +37,7 @@ Out of scope:
 | `docs/memory/frontend/github-issue-on-plan-approval.md` | add | memory of the rule (written up front, since it is a standing user directive) |
 | `docs/memory/MEMORY.md` | modify | index entry for the new memory file |
 | `docs/decisions/2026-08-01-001-github-issue-on-plan-approval.md` | add | decision-log entry for adopting the rule |
-| `docs/plans/in-progress/0027-nft-transaction-provenance-link-{frontend,contracts}.md` | modify | *(task 6a, added during implementation)* `GitHub Issue:` line for backfilled #42 |
+| `docs/plans/done/0027-nft-transaction-provenance-link-{frontend,contracts}.md` | modify | *(task 6a, added during implementation)* `GitHub Issue:` line for backfilled #42 |
 | `docs/adr/0027-nft-transaction-provenance-link.md` | modify | *(task 6a)* #42 added to `## References` |
 | `docs/adr/0013-devcontainer-env-scaffolding.md` | modify | *(task 6)* #41 added to `## References` |
 | `docs/decisions/2026-08-02-00{1,2,3,4,5}-*.md` | add | transition entries (draft→approved, approved→in-progress, in-progress→done) plus the two backfill decisions |
