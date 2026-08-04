@@ -76,6 +76,27 @@ export const getMinterAddress = async (chainId) => {
   }
 };
 
+// ADR 0035: whether `account` currently holds ORG_ROLE (approved to mint/
+// update VIN records). Never throws — a failed role check must degrade to
+// "not approved" in the UI rather than blank the panel or crash.
+export const hasOrgRole = async (account, chainId) => {
+  netLog.debug("hasOrgRole:start", { account, chainId });
+  try {
+    const web3 = new Web3(window.ethereum);
+    const address = getContractAddress(chainId);
+    if (!address || !account) return false;
+
+    const contract = new web3.eth.Contract(contractAbi, address);
+    const role = await contract.methods.ORG_ROLE().call();
+    const granted = await contract.methods.hasRole(role, account).call();
+    netLog.info("hasOrgRole:done", { account, chainId, granted });
+    return granted;
+  } catch (error) {
+    netLog.error("hasOrgRole:failed", { account, chainId, error: error.message });
+    return false;
+  }
+};
+
 // Reads every registered NFT off the registry and returns [{ vin, cid }] rows.
 // getAllVins() and getAllCidsAsList() are index-aligned on-chain (both built
 // from the same `vinKeys` array), so zipping them by index is safe.
@@ -108,13 +129,14 @@ export const getAllRegisteredNfts = async (chainId) => {
 // that on its own, so the scan is split into windows under the cap.
 const MAX_BLOCK_RANGE = 9999;
 
-const getPastEventsChunked = async (contract, eventName, fromBlock, toBlock) => {
+const getPastEventsChunked = async (contract, eventName, fromBlock, toBlock, filter) => {
   const events = [];
   for (let start = fromBlock; start <= toBlock; start += MAX_BLOCK_RANGE + 1) {
     const end = Math.min(start + MAX_BLOCK_RANGE, toBlock);
     const chunk = await contract.getPastEvents(eventName, {
       fromBlock: start,
       toBlock: end,
+      ...(filter ? { filter } : {}),
     });
     events.push(...chunk);
   }
@@ -162,6 +184,59 @@ export const getTransactionHistoryForVin = async (vin, chainId) => {
       chainId,
       error: error.message,
     });
+    return [];
+  }
+};
+
+// ADR 0035 (decision 2026-08-04-002): reconstructs the current ORG_ROLE
+// membership from RoleGranted/RoleRevoked events, rather than adding
+// AccessControlEnumerableUpgradeable's on-chain storage. Both events are
+// indexed on `role`, so the RPC filters server-side to just ORG_ROLE grants/
+// revokes. A wallet is a current holder if its most recent matching event
+// (by block, then log index) is a grant, not a revoke.
+export const getOrgRoleHolders = async (chainId) => {
+  netLog.debug("getOrgRoleHolders:start", { chainId });
+  try {
+    const web3 = new Web3(window.ethereum);
+    const address = getContractAddress(chainId);
+    if (!address) return [];
+
+    const contract = new web3.eth.Contract(contractAbi, address);
+    const orgRole = await contract.methods.ORG_ROLE().call();
+    const fromBlock = getContractDeployBlock(chainId);
+    const latestBlock = Number(await web3.eth.getBlockNumber());
+
+    const [granted, revoked] = await Promise.all([
+      getPastEventsChunked(contract, "RoleGranted", fromBlock, latestBlock, { role: orgRole }),
+      getPastEventsChunked(contract, "RoleRevoked", fromBlock, latestBlock, { role: orgRole }),
+    ]);
+
+    // web3.js v4 returns blockNumber/logIndex as BigInt — sorting must coerce
+    // to Number first, since a comparator returning a BigInt throws
+    // ("Cannot convert a BigInt value to a number") when the engine applies
+    // its usual numeric coercion to the result.
+    const events = [
+      ...granted.map((event) => ({ ...event, _isGrant: true })),
+      ...revoked.map((event) => ({ ...event, _isGrant: false })),
+    ].sort(
+      (a, b) =>
+        Number(a.blockNumber) - Number(b.blockNumber) || Number(a.logIndex) - Number(b.logIndex)
+    );
+
+    const currentlyGranted = new Map();
+    for (const event of events) {
+      currentlyGranted.set(event.returnValues.account, event._isGrant);
+    }
+
+    const holders = [...currentlyGranted.entries()]
+      .filter(([, isGrant]) => isGrant)
+      .map(([account]) => account)
+      .sort();
+
+    netLog.info("getOrgRoleHolders:done", { chainId, count: holders.length });
+    return holders;
+  } catch (error) {
+    netLog.error("getOrgRoleHolders:failed", { chainId, error: error.message });
     return [];
   }
 };

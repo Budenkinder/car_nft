@@ -37,7 +37,7 @@ describe("VinCidRegistry edge cases", function () {
     const OUTER_CID = "outerCidWrittenByTheOriginalCall";
     const INNER_CID = "innerCidWrittenByTheReentrantCall";
 
-    it("leaves vinToCid and the NFT's tokenURI pointing at different CIDs — documented, not fixed", async function () {
+    it("reverts the entire mint when the reentrant call comes from a wallet without ORG_ROLE (ADR 0035 narrows this hole, does not close it)", async function () {
       const { registry, registryAddress, minter } = await networkHelpers.loadFixture(fixture);
       const receiver = await ethers.deployContract("MaliciousReentrantReceiver");
       const receiverAddress = await receiver.getAddress();
@@ -47,19 +47,20 @@ describe("VinCidRegistry edge cases", function () {
       // ownership) runs, then onERC721Received fires *before* storeCid's own
       // _setTokenURI/_payReward — the receiver reenters storeCid for the
       // same VIN from inside that callback. See ADR 0020's Open Questions.
-      await registry
-        .connect(minter)
-        .storeCid(VIN, OUTER_CID, receiverAddress, { gasLimit: 800_000n });
-
-      const tokenId = BigInt(ethers.keccak256(ethers.toUtf8Bytes(VIN)));
-
-      // The outer call's _setTokenURI runs *after* the reentrant inner call
-      // returns, clobbering it — tokenURI ends up reflecting the outer
-      // (original) CID, while vinToCid (read via getCidByVin) reflects the
-      // inner (reentrant) CID written during the callback.
-      expect(await registry.tokenURI(tokenId)).to.equal(`ipfs://${OUTER_CID}`);
-      expect(await registry.getCidByVin(VIN)).to.equal(INNER_CID);
-      expect(await registry.ownerOf(tokenId)).to.equal(receiverAddress); // exactly one NFT minted
+      //
+      // Before ADR 0035, storeCid's update path was open to any caller, so
+      // this reentrant call succeeded and left vinToCid/tokenURI diverging.
+      // Now updates require ORG_ROLE, and the receiver contract (the
+      // reentrant caller) doesn't hold it — its inner storeCid call reverts,
+      // and that revert reason bubbles up through
+      // ERC721Utils.checkOnERC721Received's catch block, failing the whole
+      // outer mint instead of silently diverging. This narrows the hole
+      // (an unprivileged reentrant recipient can no longer corrupt state) but
+      // does not close it: an ORG_ROLE-holding contract acting as its own
+      // recipient could still reenter and reproduce the divergence.
+      await expect(
+        registry.connect(minter).storeCid(VIN, OUTER_CID, receiverAddress, { gasLimit: 800_000n })
+      ).to.be.revertedWith("Not an approved organization");
     });
   });
 });

@@ -1,0 +1,92 @@
+import Web3 from "web3";
+import { walletLog } from "./logger";
+
+// Builds the personal_sign challenge string proving control of the wallet
+// being registered. Verified by a human reviewer off-chain (e.g. via
+// web3.eth.personal.ecRecover or Etherscan's signature verifier) — the
+// contract never checks this signature; it only checks ORG_ROLE once the
+// deployer grants it (see scripts/manage-org-role.js).
+export const buildChallengeMessage = (legalName) => {
+  const timestamp = new Date().toISOString();
+  return `I confirm control of this wallet for car_nft registration — ${legalName} — ${timestamp}`;
+};
+
+export const signChallenge = async (message, walletAddress) => {
+  walletLog.info("orgApplication:signChallenge:start", { walletAddress });
+  const web3 = new Web3(window.ethereum);
+  try {
+    const signature = await web3.eth.personal.sign(message, walletAddress, "");
+    walletLog.info("orgApplication:signChallenge:done", { walletAddress });
+    return signature;
+  } catch (error) {
+    walletLog.warn("orgApplication:signChallenge:failed", {
+      walletAddress,
+      code: error.code,
+      message: error.message,
+    });
+    throw error;
+  }
+};
+
+// `mailto:` bodies truncate at varying, undocumented lengths across mail
+// clients (commonly cited around ~2,000 characters) — this is a heuristic
+// warning threshold, not a guarantee. Task 7 requires a real-browser check;
+// this constant exists so the UI can proactively offer the copy-to-clipboard
+// fallback rather than let an applicant discover truncation after the fact.
+export const MAILTO_LENGTH_WARNING_THRESHOLD = 2000;
+
+export const buildApplicationEmailBody = (fields, challenge, signature) => {
+  const lines = [
+    "ORGANIZATION APPLICATION — car_nft ORG_ROLE registration",
+    "",
+    "== 1. Organization Identity ==",
+    `Legal name: ${fields.legalName}`,
+    `Registration number: ${fields.registrationNumber}`,
+    `Tax/VAT ID: ${fields.taxOrVatId}`,
+    `Business address: ${fields.businessAddress}`,
+    `Founded date: ${fields.foundedDate}`,
+    "",
+    "== 2. Trade Qualification ==",
+    `Craftsman certificate: ${fields.craftsmanCertificate}`,
+    `Chamber membership number: ${fields.chamberMembershipNumber}`,
+    `Specialization: ${fields.specialization}`,
+    "",
+    "== 3. Insurance ==",
+    `Provider: ${fields.insuranceProvider}`,
+    `Policy number: ${fields.policyNumber}`,
+    `Coverage expiry: ${fields.coverageExpiry}`,
+    "",
+    "== 4. Contact Person ==",
+    `Name: ${fields.contactName}`,
+    `Role: ${fields.contactRole}`,
+    `Business email: ${fields.contactEmail}`,
+    `Phone: ${fields.contactPhone}`,
+    "",
+    "== 5. Wallet ==",
+    `Address: ${fields.walletAddress}`,
+    `Signed challenge: ${challenge}`,
+    `Signature: ${signature}`,
+    "",
+    "== 6. Supporting Evidence ==",
+    `Website: ${fields.website || "(none)"}`,
+    `References: ${fields.references || "(none)"}`,
+    "",
+    "== 7. Declarations ==",
+    `Accuracy confirmed: ${fields.accuracyConfirmed ? "Yes" : "No"}`,
+    `Fraud-ban acknowledged: ${fields.fraudBanAcknowledged ? "Yes" : "No"}`,
+    `Typed name: ${fields.declarationName}`,
+    `Date: ${fields.declarationDate}`,
+    "",
+    "== Documents to attach to this email ==",
+    "- Craftsman certificate / trade qualification proof",
+    "- Chamber of commerce / business registration extract",
+    "- Insurance policy certificate",
+  ];
+  return lines.join("\n");
+};
+
+export const buildMailtoLink = (recipient, subject, body) => {
+  return `mailto:${recipient}?subject=${encodeURIComponent(subject)}&body=${encodeURIComponent(
+    body
+  )}`;
+};

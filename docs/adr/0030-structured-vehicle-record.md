@@ -4,8 +4,8 @@
 - **Date:** 2026-07-31
 - **Scope:** both
 - **Related plans:**
-  - `docs/plans/draft/0030-structured-vehicle-record-frontend.md`
-  - `docs/plans/draft/0030-structured-vehicle-record-contracts.md`
+  - `docs/plans/rejected/0030-structured-vehicle-record-frontend.md`
+  - `docs/plans/rejected/0030-structured-vehicle-record-contracts.md`
 - **Related decisions:** `docs/decisions/2026-07-31-005-vehicle-record-entries-chosen.md`
 
 ## Context
