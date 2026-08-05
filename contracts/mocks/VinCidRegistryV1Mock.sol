@@ -3,32 +3,26 @@ pragma solidity ^0.8.24;
 
 import "@openzeppelin/contracts-upgradeable/token/ERC721/extensions/ERC721URIStorageUpgradeable.sol";
 import "@openzeppelin/contracts-upgradeable/access/OwnableUpgradeable.sol";
-import "@openzeppelin/contracts-upgradeable/access/AccessControlUpgradeable.sol";
 import "@openzeppelin/contracts-upgradeable/proxy/utils/UUPSUpgradeable.sol";
 import "@openzeppelin/contracts/proxy/utils/Initializable.sol";
 import "@openzeppelin/contracts/token/ERC20/IERC20.sol";
 
-/// @title VinCidRegistry
-/// @notice One NFT per VIN. The tokenURI points at the latest IPFS CID for the
-///         car's repair history. Only wallets holding `ORG_ROLE` (approved
-///         organizations) may mint new VIN NFTs or update an existing record;
-///         the NFT is assigned to a `recipient` argument supplied by the
-///         caller — typically the car owner's wallet. `ORG_ROLE` is granted
-///         and revoked by `DEFAULT_ADMIN_ROLE`, held by the contract deployer
-///         (see ADR 0035 — a Safe/multisig admin was considered and dropped).
-/// @dev Upgradeable via UUPS behind an `ERC1967Proxy` (see ADR 0028) so that
-///      registered VIN/CID data survives future logic upgrades instead of
-///      resetting on every redeploy. Any future version of this contract must
-///      only APPEND new state after `__gap` (shrinking it accordingly) — never
-///      reorder or remove the fields below, or an upgrade will corrupt storage.
-///      `AccessControlUpgradeable` uses ERC-7201 namespaced storage, so it
-///      does not consume sequential slots from `__gap` (verified in
-///      test/VinCidRegistry.upgrade.test.js).
-contract VinCidRegistry is
+/// @title VinCidRegistryV1Mock
+/// @notice Test-only. A frozen snapshot of `VinCidRegistry` exactly as it was
+///         before ADR 0035 (single `minter` EOA, no `AccessControlUpgradeable`,
+///         open updates). Used solely by
+///         test/VinCidRegistry.upgrade.test.js to deploy "the pre-ADR-0035
+///         registry", write real state against it, then upgrade the proxy to
+///         the current `VinCidRegistry` and assert every pre-existing value
+///         (including `minter`, now dead-but-retained storage) survives
+///         byte-for-byte, and that `AccessControlUpgradeable`'s ERC-7201
+///         namespaced storage does not collide with this contract's
+///         sequential slots or `__gap`. Never deployed by scripts/deploy.js
+///         or scripts/upgrade.js.
+contract VinCidRegistryV1Mock is
     Initializable,
     ERC721URIStorageUpgradeable,
     OwnableUpgradeable,
-    AccessControlUpgradeable,
     UUPSUpgradeable
 {
     mapping(string => string) private vinToCid;
@@ -38,22 +32,14 @@ contract VinCidRegistry is
     IERC20 public rewardToken;
     uint256 public rewardAmount;
 
-    /// @notice Deprecated (ADR 0035). Retained only for storage-layout
-    ///         compatibility across the upgrade — no longer read by any code
-    ///         path. Access is governed by `ORG_ROLE` instead; see `initializeV2`.
+    /// @notice Address authorized to mint new VIN NFTs. Separate from `owner()`
+    ///         so a back-office "registry operator" can onboard cars without
+    ///         holding admin powers (or vice versa).
     address public minter;
-
-    /// @notice Held by any wallet approved to mint or update VIN records.
-    ///         Granted/revoked by `DEFAULT_ADMIN_ROLE` (the contract deployer).
-    bytes32 public constant ORG_ROLE = keccak256("ORG_ROLE");
-
-    /// @notice Declared for ADR 0030's future verifier concept. Unused today —
-    ///         no function checks this role yet (decision 2026-08-03-004).
-    bytes32 public constant VERIFIER_ROLE = keccak256("VERIFIER_ROLE");
 
     event CidStored(string vin, string cid, uint256 tokenId);
     event TokensWithdrawn(address indexed token, address indexed to, uint256 amount);
-    event ApplicationSubmitted(address indexed applicant, uint256 timestamp);
+    event MinterChanged(address indexed previousMinter, address indexed newMinter);
 
     /// @custom:oz-upgrades-unsafe-allow constructor
     constructor() {
@@ -70,23 +56,12 @@ contract VinCidRegistry is
         require(initialMinter != address(0), "Minter required");
         rewardToken = IERC20(rewardTokenAddress);
         minter = initialMinter;
-    }
-
-    /// @notice ADR 0035 migration. Callable exactly once, any time after
-    ///         `initialize`. Bootstraps the role model: `admin` becomes
-    ///         `DEFAULT_ADMIN_ROLE` (able to grant/revoke `ORG_ROLE`), and the
-    ///         incumbent `minter` is granted `ORG_ROLE` so it keeps working
-    ///         without a separate manual grant.
-    function initializeV2(address admin) public reinitializer(2) {
-        __AccessControl_init();
-        require(admin != address(0), "Admin required");
-        _grantRole(DEFAULT_ADMIN_ROLE, admin);
-        _grantRole(ORG_ROLE, minter);
+        emit MinterChanged(address(0), initialMinter);
     }
 
     /// @notice Mint a new car NFT (first call for a VIN) or update the CID on
-    ///         an existing one. Both mints and updates are gated to `ORG_ROLE`
-    ///         and the NFT is assigned to `recipient` on a new mint.
+    ///         an existing one. Mints are gated to the `minter` address and the
+    ///         NFT is assigned to `recipient`. Updates are open in this POC.
     /// @param vin       17-character VIN.
     /// @param cid       IPFS CID for the metadata JSON. Stored as `ipfs://<cid>`.
     /// @param recipient Wallet that receives the NFT on a new mint. Ignored
@@ -94,12 +69,12 @@ contract VinCidRegistry is
     function storeCid(string calldata vin, string calldata cid, address recipient) external {
         require(bytes(vin).length == 17, "VIN must be 17 characters");
         require(bytes(cid).length > 0, "CID required");
-        require(hasRole(ORG_ROLE, msg.sender), "Not an approved organization");
 
         uint256 tokenId = _tokenIdFromVin(vin);
         bool isNewMint = _ownerOf(tokenId) == address(0);
 
         if (isNewMint) {
+            require(msg.sender == minter, "Only minter can mint");
             require(recipient != address(0), "Recipient required");
         }
 
@@ -125,16 +100,11 @@ contract VinCidRegistry is
         }
     }
 
-    /// @notice ADR 0037. Callable by any wallet, including one with no role —
-    ///         an org-registration applicant has none yet. Emits only the
-    ///         caller's address and the block timestamp; no application
-    ///         content or hash of it is ever accepted or stored (decision
-    ///         2026-08-03-002). Gives the applicant a real, mined transaction
-    ///         to reference in their application email as a stronger proof
-    ///         than `personal_sign` alone: it shows the wallet can actually
-    ///         transact on this network, not just sign a message.
-    function submitApplication() external {
-        emit ApplicationSubmitted(msg.sender, block.timestamp);
+    /// @notice Owner-only: change the minter address.
+    function setMinter(address newMinter) external onlyOwner {
+        require(newMinter != address(0), "Minter required");
+        emit MinterChanged(minter, newMinter);
+        minter = newMinter;
     }
 
     /// @notice Withdraw tokens held by the registry. Use this to recover funds
@@ -183,20 +153,9 @@ contract VinCidRegistry is
     }
 
     /// @dev Gates `upgradeToAndCall` (inherited from `UUPSUpgradeable`) to the
-    ///      contract owner. `ORG_ROLE` (mint/update authority) and `owner`
-    ///      (upgrade authority) remain distinct.
+    ///      contract owner. `minter` (mint authority) and `owner` (upgrade
+    ///      authority) remain distinct roles.
     function _authorizeUpgrade(address newImplementation) internal override onlyOwner {}
-
-    /// @dev Required override: both `ERC721URIStorageUpgradeable` and
-    ///      `AccessControlUpgradeable` declare `supportsInterface`.
-    function supportsInterface(bytes4 interfaceId)
-        public
-        view
-        override(ERC721URIStorageUpgradeable, AccessControlUpgradeable)
-        returns (bool)
-    {
-        return super.supportsInterface(interfaceId);
-    }
 
     // Storage gap: reserved slots so a future upgrade can append new state
     // variables above without shifting the layout of the fields declared

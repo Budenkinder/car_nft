@@ -4,8 +4,9 @@
   "deployer": "0x2c2f4d8EE1976B4f4fDC46B4B8fCb6E9A60A88d6",
   "rewardToken": "0x854966B53849f7fF12Bad90293E1eD2DcADc913e",
   "registry": "0x9e30596A7C80754cd5149A465e89758CAdB0F8B3",
-  "implementation": "0xdE69ad20A6169bEf874488C6306361Cfd9cbE264",
+  "implementation": "0xdB807873843ebAC47e2933822baedDac3b592140",
   "initialMinter": "0x2c2f4d8EE1976B4f4fDC46B4B8fCb6E9A60A88d6",
   "deployedAt": "2026-07-30T21:44:25.108Z",
-  "deployedAtBlock": 11385148
+  "deployedAtBlock": 11385148,
+  "upgradedAt": "2026-08-05T15:20:11.542Z"
 }

@@ -1,7 +1,7 @@
 import React, { useState, useCallback, useEffect, useMemo } from "react";
 import {
   getCidFromContract,
-  getMinterAddress,
+  hasOrgRole,
   getAllRegisteredNfts,
   handleNFTCreation,
   fetchNFTMetadata,
@@ -32,6 +32,8 @@ import {
 import Brightness4Icon from "@mui/icons-material/Brightness4";
 import Brightness7Icon from "@mui/icons-material/Brightness7";
 import MetaMaskLogin from "./components/MetaMaskLogin";
+import OrgRegistrationForm from "./components/OrgRegistrationForm";
+import OrgWalletsList from "./components/OrgWalletsList";
 import { useThemeMode } from "./theme/ThemeModeContext";
 import { lightPalette, darkPalette } from "./theme/palettes";
 
@@ -66,7 +68,9 @@ function App() {
   const [mileage, setMileage] = useState("");
   const [txHash, setTxHash] = useState("");
   const [walletAddress, setWalletAddress] = useState("");
-  const [minterAddress, setMinterAddress] = useState("");
+  const [isOrg, setIsOrg] = useState(null); // null = unknown/loading
+  const [isCheckingOrgRole, setIsCheckingOrgRole] = useState(false);
+  const [view, setView] = useState("registry"); // "registry" | "register"
   const [errors, setErrors] = useState({});
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [isLoadingNFT, setIsLoadingNFT] = useState(false);
@@ -83,27 +87,32 @@ function App() {
     setChainId(newChainId);
   }, []);
 
+  // ADR 0035: role-aware gating. A wallet without ORG_ROLE can revert on
+  // storeCid for both mints and updates, so the UI checks first — this is a
+  // UX convenience, not the real access control (the contract enforces
+  // that). Re-checked on every wallet/account or network change.
   useEffect(() => {
-    if (!chainId) return;
+    if (!walletAddress || !chainId) {
+      setIsOrg(null);
+      return;
+    }
     let cancelled = false;
-    uiLog.debug("fetching minter address", { chainId });
-    getMinterAddress(chainId).then((addr) => {
+    setIsCheckingOrgRole(true);
+    uiLog.debug("checking ORG_ROLE", { walletAddress, chainId });
+    hasOrgRole(walletAddress, chainId).then((granted) => {
       if (!cancelled) {
-        uiLog.info("minter resolved", { chainId, minter: addr || null });
-        setMinterAddress(addr || "");
+        uiLog.info("ORG_ROLE resolved", { walletAddress, chainId, granted });
+        setIsOrg(granted);
+        setIsCheckingOrgRole(false);
       }
     });
     return () => {
       cancelled = true;
     };
-  }, [chainId]);
+  }, [walletAddress, chainId]);
 
-  const isConnectedAsMinter =
-    !!walletAddress &&
-    !!minterAddress &&
-    walletAddress.toLowerCase() === minterAddress.toLowerCase();
   const isNewMint = !vinExistsOnChain;
-  const submitBlocked = isNewMint && !isConnectedAsMinter;
+  const submitBlocked = !isOrg;
 
   const handleSubmit = async (event) => {
     event.preventDefault();
@@ -138,7 +147,7 @@ function App() {
     }
     if (submitBlocked) {
       newErrors.general =
-        "Only the minter wallet can register a new VIN. Switch MetaMask to the minter account.";
+        "This wallet is not registered as an approved organization. Apply first, or switch MetaMask to an approved wallet.";
     }
 
     const validation = validateCarData(carData);
@@ -279,255 +288,294 @@ function App() {
         </Toolbar>
       </AppBar>
 
-      <Container maxWidth="sm" sx={{ mt: 4 }}>
-        <Paper elevation={2} sx={{ p: 3 }}>
-          <Typography variant="h5" gutterBottom>
-            Search via Smart Contract for the VIN NFT: WBADT33383G473829
-          </Typography>
-          <Stack spacing={2}>
-            <TextField
-              label="VIN Search"
-              fullWidth
-              value={vin}
-              onChange={(e) => setVin(e.target.value)}
-              error={!!errors.vin}
-              helperText={
-                errors.vin || "Vehicle Identification Number (17 characters)"
-              }
-            />
-            <Button
-              variant="contained"
-              color="primary"
-              onClick={handleLoadNFT}
-              disabled={isLoadingNFT || walletAddress.length === 0}
-              startIcon={
-                isLoadingNFT ? (
-                  <CircularProgress size={20} color="inherit" />
-                ) : null
-              }
-            >
-              {isLoadingNFT ? "Loading..." : "Load Car NFT"}
-            </Button>
-          </Stack>
-          {vinLastCid && (
-            <Typography variant="body2" sx={{ mt: 2 }}>
-              Loaded CID: {vinLastCid}
-            </Typography>
-          )}
-        </Paper>
-      </Container>
+      {view === "register" ? (
+        <OrgRegistrationForm
+          walletAddress={walletAddress}
+          chainId={chainId}
+          onBack={() => setView("registry")}
+        />
+      ) : (
+        <Box
+          sx={{
+            display: "flex",
+            flexWrap: "wrap",
+            justifyContent: "center",
+            alignItems: "flex-start",
+            gap: 4,
+            mt: 4,
+            mb: 4,
+            px: 2,
+          }}
+        >
+          <Box sx={{ width: "100%", maxWidth: 600 }}>
+            <Stack spacing={4}>
+              <Paper elevation={2} sx={{ p: 3 }}>
+                <Typography variant="h5" gutterBottom>
+                  Search via Smart Contract for the VIN NFT: WBADT33383G473829
+                </Typography>
+                <Stack spacing={2}>
+                  <TextField
+                    label="VIN Search"
+                    fullWidth
+                    value={vin}
+                    onChange={(e) => setVin(e.target.value)}
+                    error={!!errors.vin}
+                    helperText={
+                      errors.vin || "Vehicle Identification Number (17 characters)"
+                    }
+                  />
+                  <Button
+                    variant="contained"
+                    color="primary"
+                    onClick={handleLoadNFT}
+                    disabled={isLoadingNFT || walletAddress.length === 0}
+                    startIcon={
+                      isLoadingNFT ? (
+                        <CircularProgress size={20} color="inherit" />
+                      ) : null
+                    }
+                  >
+                    {isLoadingNFT ? "Loading..." : "Load Car NFT"}
+                  </Button>
+                </Stack>
+                {vinLastCid && (
+                  <Typography variant="body2" sx={{ mt: 2 }}>
+                    Loaded CID: {vinLastCid}
+                  </Typography>
+                )}
+              </Paper>
 
-      <Container maxWidth="sm" sx={{ mt: 4 }}>
-        <Paper elevation={2} sx={{ p: 3 }}>
-          <Typography variant="h5" gutterBottom>
-            All Registered Car NFTs
-          </Typography>
-          <Button
-            variant="contained"
-            color="primary"
-            onClick={handleShowAllNfts}
-            disabled={isLoadingList || walletAddress.length === 0}
-            startIcon={
-              isLoadingList ? (
-                <CircularProgress size={20} color="inherit" />
-              ) : null
-            }
-          >
-            {isLoadingList ? "Loading..." : "Show all registered NFTs"}
-          </Button>
-          {nftList.length > 0 && (
-            <List dense sx={{ mt: 2 }}>
-              {nftList.map((nft) => (
-                <ListItem key={nft.vin} disableGutters divider>
-                  <ListItemText
-                    primary={nft.vin}
-                    secondary={
+              <Paper elevation={2} sx={{ p: 3 }}>
+                <Typography variant="h5" gutterBottom>
+                  All Registered Car NFTs
+                </Typography>
+                <Button
+                  variant="contained"
+                  color="primary"
+                  onClick={handleShowAllNfts}
+                  disabled={isLoadingList || walletAddress.length === 0}
+                  startIcon={
+                    isLoadingList ? (
+                      <CircularProgress size={20} color="inherit" />
+                    ) : null
+                  }
+                >
+                  {isLoadingList ? "Loading..." : "Show all registered NFTs"}
+                </Button>
+                {nftList.length > 0 && (
+                  <List dense sx={{ mt: 2 }}>
+                    {nftList.map((nft) => (
+                      <ListItem key={nft.vin} disableGutters divider>
+                        <ListItemText
+                          primary={nft.vin}
+                          secondary={
+                            <a
+                              href={`https://gateway.pinata.cloud/ipfs/${nft.cid}`}
+                              target="_blank"
+                              rel="noreferrer"
+                            >
+                              {nft.cid}
+                            </a>
+                          }
+                        />
+                      </ListItem>
+                    ))}
+                  </List>
+                )}
+                {listLoaded && nftList.length === 0 && (
+                  <Typography variant="body2" sx={{ mt: 2 }}>
+                    No NFTs registered yet.
+                  </Typography>
+                )}
+              </Paper>
+
+              <Paper elevation={2} sx={{ p: 3 }}>
+                <Typography variant="h5" gutterBottom>
+                  Create or Update CAR NFT
+                </Typography>
+
+                {!walletAddress && (
+                  <Typography variant="body2" color="text.secondary">
+                    Connect your wallet to create or update a car record.
+                  </Typography>
+                )}
+
+                {walletAddress && isCheckingOrgRole && (
+                  <Stack direction="row" spacing={1} alignItems="center">
+                    <CircularProgress size={18} />
+                    <Typography variant="body2" color="text.secondary">
+                      Checking approval status...
+                    </Typography>
+                  </Stack>
+                )}
+
+                {walletAddress && !isCheckingOrgRole && isOrg === false && (
+                  <Box>
+                    <Typography variant="body2" color="text.secondary" sx={{ mb: 2 }}>
+                      This wallet ({walletAddress}) is not registered as an approved
+                      organization, so it cannot create or update VIN records.
+                    </Typography>
+                    <Button variant="outlined" onClick={() => setView("register")}>
+                      Apply to become an approved organization
+                    </Button>
+                  </Box>
+                )}
+
+                {walletAddress && !isCheckingOrgRole && isOrg === true && (
+                  <Stack spacing={2}>
+                    <TextField
+                      label="VIN"
+                      fullWidth
+                      value={createVin}
+                      onChange={(e) => setCreateVin(e.target.value)}
+                      error={!!errors.vinNumber}
+                      helperText={
+                        errors.vinNumber ||
+                        "Vehicle Identification Number (17 characters)"
+                      }
+                    />
+                    {isNewMint && (
+                      <TextField
+                        label="TÜV Car Inspection Wallet Address (recipient)"
+                        fullWidth
+                        value={recipient}
+                        onChange={(e) => setRecipient(e.target.value)}
+                        error={!!errors.recipient}
+                        helperText={
+                          errors.recipient ||
+                          "Wallet address that will receive the NFT (only used on first registration of this VIN)"
+                        }
+                      />
+                    )}
+                    <TextField
+                      label="Brand"
+                      fullWidth
+                      value={brand}
+                      onChange={(e) => setBrand(e.target.value)}
+                      error={!!errors.brand}
+                      helperText={errors.brand}
+                    />
+                    <TextField
+                      label="Model"
+                      fullWidth
+                      value={model}
+                      onChange={(e) => setModel(e.target.value)}
+                      error={!!errors.model}
+                      helperText={errors.model}
+                    />
+                    <TextField
+                      label="Year"
+                      fullWidth
+                      value={year}
+                      onChange={(e) => setYear(e.target.value)}
+                      error={!!errors.year}
+                      helperText={errors.year}
+                    />
+                    <TextField
+                      label="Issue Fixed"
+                      fullWidth
+                      value={issue}
+                      onChange={(e) => setIssue(e.target.value)}
+                      error={!!errors.issue}
+                      helperText={errors.issue}
+                    />
+                    <TextField
+                      label="Repair Shop"
+                      fullWidth
+                      value={shop}
+                      onChange={(e) => setShop(e.target.value)}
+                      error={!!errors.shop}
+                      helperText={errors.shop}
+                    />
+                    <TextField
+                      label="Mileage in Km"
+                      fullWidth
+                      value={mileage}
+                      onChange={(e) => setMileage(e.target.value)}
+                      error={!!errors.mileage}
+                      helperText={errors.mileage}
+                    />
+
+                    <Button
+                      variant="contained"
+                      color="primary"
+                      onClick={handleSubmit}
+                      disabled={
+                        walletAddress.length === 0 || isSubmitting || submitBlocked
+                      }
+                      startIcon={
+                        isSubmitting ? (
+                          <CircularProgress size={20} color="inherit" />
+                        ) : null
+                      }
+                    >
+                      {isSubmitting
+                        ? "Processing..."
+                        : isNewMint
+                        ? "Register New Car NFT"
+                        : "Submit Repair Update"}
+                    </Button>
+                  </Stack>
+                )}
+
+                {errors.general && (
+                  <Typography color="error" sx={{ mt: 2 }}>
+                    {errors.general}
+                  </Typography>
+                )}
+
+                {txHash && (
+                  <Box mt={2}>
+                    <Typography variant="body2">
+                      Transaction sent:{" "}
                       <a
-                        href={`https://gateway.pinata.cloud/ipfs/${nft.cid}`}
+                        href={`https://sepolia.etherscan.io/tx/${txHash}`}
                         target="_blank"
                         rel="noreferrer"
                       >
-                        {nft.cid}
+                        {txHash}
                       </a>
-                    }
-                  />
-                </ListItem>
-              ))}
-            </List>
-          )}
-          {listLoaded && nftList.length === 0 && (
-            <Typography variant="body2" sx={{ mt: 2 }}>
-              No NFTs registered yet.
-            </Typography>
-          )}
-        </Paper>
-      </Container>
+                    </Typography>
+                  </Box>
+                )}
 
-      <Container maxWidth="sm" sx={{ mt: 4 }}>
-        <Paper elevation={2} sx={{ p: 3 }}>
-          <Typography variant="h5" gutterBottom>
-            Create or Update CAR NFT
-          </Typography>
-          {minterAddress && (
-            <Typography
-              variant="body2"
-              color={isConnectedAsMinter ? "success.main" : "text.secondary"}
-              sx={{ mb: 2 }}
-            >
-              Minter: {minterAddress}
-              {isConnectedAsMinter
-                ? " — connected wallet matches (can register new VINs)"
-                : " — connected wallet is NOT the minter (updates only)"}
-            </Typography>
-          )}
-          <Stack spacing={2}>
-            <TextField
-              label="VIN"
-              fullWidth
-              value={createVin}
-              onChange={(e) => setCreateVin(e.target.value)}
-              error={!!errors.vinNumber}
-              helperText={
-                errors.vinNumber ||
-                "Vehicle Identification Number (17 characters)"
-              }
-            />
-            {isNewMint && (
-              <TextField
-                label="TÜV Car Inspection Wallet Address (recipient)"
-                fullWidth
-                value={recipient}
-                onChange={(e) => setRecipient(e.target.value)}
-                error={!!errors.recipient}
-                helperText={
-                  errors.recipient ||
-                  "Wallet address that will receive the NFT (only used on first registration of this VIN)"
-                }
-              />
-            )}
-            <TextField
-              label="Brand"
-              fullWidth
-              value={brand}
-              onChange={(e) => setBrand(e.target.value)}
-              error={!!errors.brand}
-              helperText={errors.brand}
-            />
-            <TextField
-              label="Model"
-              fullWidth
-              value={model}
-              onChange={(e) => setModel(e.target.value)}
-              error={!!errors.model}
-              helperText={errors.model}
-            />
-            <TextField
-              label="Year"
-              fullWidth
-              value={year}
-              onChange={(e) => setYear(e.target.value)}
-              error={!!errors.year}
-              helperText={errors.year}
-            />
-            <TextField
-              label="Issue Fixed"
-              fullWidth
-              value={issue}
-              onChange={(e) => setIssue(e.target.value)}
-              error={!!errors.issue}
-              helperText={errors.issue}
-            />
-            <TextField
-              label="Repair Shop"
-              fullWidth
-              value={shop}
-              onChange={(e) => setShop(e.target.value)}
-              error={!!errors.shop}
-              helperText={errors.shop}
-            />
-            <TextField
-              label="Mileage in Km"
-              fullWidth
-              value={mileage}
-              onChange={(e) => setMileage(e.target.value)}
-              error={!!errors.mileage}
-              helperText={errors.mileage}
-            />
+                {txHistory.length > 0 && (
+                  <Box mt={2}>
+                    <Typography variant="subtitle2" gutterBottom>
+                      Transaction History
+                    </Typography>
+                    <List dense>
+                      {txHistory.map((entry, index) => (
+                        <ListItem key={entry.txHash} disableGutters divider>
+                          <ListItemText
+                            primary={index === 0 ? "Registration" : "Update"}
+                            secondary={
+                              <>
+                                Block {entry.blockNumber} —{" "}
+                                <a
+                                  href={`https://sepolia.etherscan.io/tx/${entry.txHash}`}
+                                  target="_blank"
+                                  rel="noreferrer"
+                                >
+                                  {entry.txHash}
+                                </a>
+                              </>
+                            }
+                          />
+                        </ListItem>
+                      ))}
+                    </List>
+                  </Box>
+                )}
+              </Paper>
+            </Stack>
+          </Box>
 
-            <Button
-              variant="contained"
-              color="primary"
-              onClick={handleSubmit}
-              disabled={
-                walletAddress.length === 0 || isSubmitting || submitBlocked
-              }
-              startIcon={
-                isSubmitting ? (
-                  <CircularProgress size={20} color="inherit" />
-                ) : null
-              }
-            >
-              {isSubmitting
-                ? "Processing..."
-                : submitBlocked
-                ? "Minter Required to Register New VIN"
-                : isNewMint
-                ? "Register New Car NFT"
-                : "Submit Repair Update"}
-            </Button>
-          </Stack>
-
-          {errors.general && (
-            <Typography color="error" sx={{ mt: 2 }}>
-              {errors.general}
-            </Typography>
-          )}
-
-          {txHash && (
-            <Box mt={2}>
-              <Typography variant="body2">
-                Transaction sent:{" "}
-                <a
-                  href={`https://sepolia.etherscan.io/tx/${txHash}`}
-                  target="_blank"
-                  rel="noreferrer"
-                >
-                  {txHash}
-                </a>
-              </Typography>
-            </Box>
-          )}
-
-          {txHistory.length > 0 && (
-            <Box mt={2}>
-              <Typography variant="subtitle2" gutterBottom>
-                Transaction History
-              </Typography>
-              <List dense>
-                {txHistory.map((entry, index) => (
-                  <ListItem key={entry.txHash} disableGutters divider>
-                    <ListItemText
-                      primary={index === 0 ? "Registration" : "Update"}
-                      secondary={
-                        <>
-                          Block {entry.blockNumber} —{" "}
-                          <a
-                            href={`https://sepolia.etherscan.io/tx/${entry.txHash}`}
-                            target="_blank"
-                            rel="noreferrer"
-                          >
-                            {entry.txHash}
-                          </a>
-                        </>
-                      }
-                    />
-                  </ListItem>
-                ))}
-              </List>
-            </Box>
-          )}
-        </Paper>
-      </Container>
+          <Box sx={{ width: "100%", maxWidth: 320 }}>
+            <OrgWalletsList chainId={chainId} />
+          </Box>
+        </Box>
+      )}
     </ThemeProvider>
   );
 }

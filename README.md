@@ -1,6 +1,6 @@
 # Car Repair NFT
 
-A dApp that records vehicle repair history on-chain. Each car — identified by its 17-character VIN — gets a single NFT whose `tokenURI` points at the latest IPFS CID for that car's repair metadata. Only a designated `minter` address (a registry operator, separate from the contract `owner`) may register new VINs; the NFT is assigned to a `recipient` argument (typically the car owner's wallet). Updating a record rewrites the NFT's URI in place (no new mint), and the registry pays out an ERC-20 reward (CRT) to the recipient on the initial mint.
+A dApp that records vehicle repair history on-chain. Each car — identified by its 17-character VIN — gets a single NFT whose `tokenURI` points at the latest IPFS CID for that car's repair metadata. Only a designated `minter` address (a registry operator, separate from the contract `owner`) may register new VINs; the NFT is assigned to a `recipient` argument (typically the car owner's wallet). Updating a record rewrites the NFT's URI in place (no new mint), and the registry pays out an ERC-20 reward (CRT Token) to the recipient on the initial mint.
 
 Flow diagram: https://excalidraw.com/#json=zV5wVQt8GJoK-GYiO-DQn,5mQBcgQrwVfJEm3sxA0Dyw
 
@@ -122,25 +122,25 @@ npm install
 
 Scripts available from the repo root (`package.json`):
 
-| Command | What it does |
-|---|---|
-| `npm run compile` | Compile contracts (output → `artifacts/`) |
-| `npm run node` | Start a persistent local EVM JSON-RPC at `127.0.0.1:8545` (Cancun EVM, chainId `31337`) |
-| `npm run deploy:local` | Deploy to the running local node and auto-write the registry address into [frontend/.env.local](frontend/.env.local) |
-| `npm run deploy:sepolia` | Deploy to Sepolia using credentials from root `.env` |
+| Command                  | What it does                                                                                                         |
+| ------------------------ | -------------------------------------------------------------------------------------------------------------------- |
+| `npm run compile`        | Compile contracts (output → `artifacts/`)                                                                            |
+| `npm run node`           | Start a persistent local EVM JSON-RPC at `127.0.0.1:8545` (Cancun EVM, chainId `31337`)                              |
+| `npm run deploy:local`   | Deploy to the running local node and auto-write the registry address into [frontend/.env.local](frontend/.env.local) |
+| `npm run deploy:sepolia` | Deploy to Sepolia using credentials from root `.env`                                                                 |
 
 ### Configure environment
 
 Copy [.env.example](.env.example) to `.env` at the repo root. Leave it empty for local deploys; fill in for Sepolia / verify:
 
-| Variable | Required for | Notes |
-|---|---|---|
-| `SEPOLIA_RPC_URL` | Sepolia | Alchemy / Infura / QuickNode endpoint |
-| `DEPLOYER_PRIVATE_KEY` | Sepolia | Dedicated test wallet — never reuse a mainnet key |
-| `ETHERSCAN_API_KEY` | `npx hardhat verify` | Free at <https://etherscan.io/myapikey> |
-| `INITIAL_MINTER` | optional | Defaults to deployer address |
-| `REWARD_AMOUNT` | optional (default `10`) | CRT per mint |
-| `REWARD_FUND` | optional (default `1000000`) | CRT pool funded into the registry on deploy |
+| Variable               | Required for                 | Notes                                             |
+| ---------------------- | ---------------------------- | ------------------------------------------------- |
+| `SEPOLIA_RPC_URL`      | Sepolia                      | Alchemy / Infura / QuickNode endpoint             |
+| `DEPLOYER_PRIVATE_KEY` | Sepolia                      | Dedicated test wallet — never reuse a mainnet key |
+| `ETHERSCAN_API_KEY`    | `npx hardhat verify`         | Free at <https://etherscan.io/myapikey>           |
+| `INITIAL_MINTER`       | optional                     | Defaults to deployer address                      |
+| `REWARD_AMOUNT`        | optional (default `10`)      | CRT per mint                                      |
+| `REWARD_FUND`          | optional (default `1000000`) | CRT pool funded into the registry on deploy       |
 
 `.env` is gitignored. Never commit real values.
 
@@ -174,12 +174,12 @@ To use it from the frontend:
 **ETH balance vs. NFT tokens:** MetaMask shows the native ETH balance for any imported account automatically — Hardhat's test accounts start pre-funded with 10,000 ETH, so that part "just works". It does **not** do the same for the VIN NFTs minted by `VinCidRegistry`: MetaMask's automatic token detection only queries its backing API for a handful of well-known networks, and Hardhat's local chain isn't one of them (Sepolia isn't reliably covered either). So after a successful mint, the NFT won't just appear in MetaMask's NFTs tab. Two ways to actually see it:
 
 - **Easiest** — click **Show All Registered NFTs** in the app. It reads directly from the contract (`getAllVins` / `getAllCidsAsList`), bypassing MetaMask entirely.
-- **Manual MetaMask import** — NFTs tab → *Import NFT*, using the registry contract address (`REACT_APP_SMART_CONTRACT_ADDRESS_LOCAL`, or from `deployments/localhost.json`) and the token ID. Token IDs here aren't sequential (1, 2, 3…) — [contracts/car_nft_sc.sol](contracts/car_nft_sc.sol) derives them as `uint256(keccak256(vin))`, so you need to compute the hash rather than guess it.
+- **Manual MetaMask import** — NFTs tab → _Import NFT_, using the registry contract address (`REACT_APP_SMART_CONTRACT_ADDRESS_LOCAL`, or from `deployments/localhost.json`) and the token ID. Token IDs here aren't sequential (1, 2, 3…) — [contracts/car_nft_sc.sol](contracts/car_nft_sc.sol) derives them as `uint256(keccak256(vin))`, so you need to compute the hash rather than guess it.
 
 **CRT (ERC-20) reward balance:** the same auto-detection gap applies to the CRT reward. MetaMask doesn't scan for arbitrary ERC-20 balances any more than it does for NFTs, so a successfully-paid reward won't just show up under Assets. Two things to check:
 
 - **You're looking at the right wallet.** `storeCid`'s reward always pays the mint's `recipient`, never the connected/minter wallet — see [Using the app](#using-the-app) below. If you minted to someone else's wallet, the CRT lands there, not in your own account.
-- **The token needs a manual import.** MetaMask → Assets tab → *Import tokens* → paste the CarRewardToken contract address (symbol `CRT`, `18` decimals). Get the address from `deployments/localhost.json`'s `rewardToken` field for a local deploy, or from [Reference deployment (Sepolia)](#reference-deployment-sepolia) below for Sepolia.
+- **The token needs a manual import.** MetaMask → Assets tab → _Import tokens_ → paste the CarRewardToken contract address (symbol `CRT`, `18` decimals). Get the address from `deployments/localhost.json`'s `rewardToken` field for a local deploy, or from [Reference deployment (Sepolia)](#reference-deployment-sepolia) below for Sepolia.
 
 State persists for as long as `npm run node` keeps running. Killing the node wipes everything; the next `npm run deploy:local` produces fresh addresses.
 
@@ -220,11 +220,11 @@ Re-verifying an already-verified contract is a no-op. Requires `ETHERSCAN_API_KE
 
 ### Roles
 
-| Role | Set by | Authority |
-|---|---|---|
-| `owner()` | `Ownable` constructor (= deployer) | Configures `rewardToken`, `rewardAmount`, `minter`. Can `withdrawToken`. |
-| `minter` | `INITIAL_MINTER` env var, or deployer if unset (changeable by `owner` via `setMinter`) | Authorized to register new VINs via `storeCid` (the mint path). |
-| Anyone | — | Can update an existing VIN's CID (POC behavior; lock down later if needed). |
+| Role      | Set by                                                                                 | Authority                                                                   |
+| --------- | -------------------------------------------------------------------------------------- | --------------------------------------------------------------------------- |
+| `owner()` | `Ownable` constructor (= deployer)                                                     | Configures `rewardToken`, `rewardAmount`, `minter`. Can `withdrawToken`.    |
+| `minter`  | `INITIAL_MINTER` env var, or deployer if unset (changeable by `owner` via `setMinter`) | Authorized to register new VINs via `storeCid` (the mint path).             |
+| Anyone    | —                                                                                      | Can update an existing VIN's CID (POC behavior; lock down later if needed). |
 
 ### Reference deployment (Sepolia)
 
@@ -269,9 +269,9 @@ Other scripts: `npm run build`, `npm test`, `npm run clean` (nuke build + node_m
 ### Using the app
 
 1. Open the app and click **Connect Wallet**. Approve in MetaMask and switch to Sepolia if prompted. The "Create or Update" panel shows the contract's current `minter` address and whether your connected wallet matches.
-2. **Search**: enter a 17-char VIN and click *Load Car NFT*. The app reads the CID from the contract and fetches the metadata from Pinata's gateway. After this call the app knows whether the VIN already exists on-chain (controls which fields/buttons appear next).
-3. **Register a new car (mint)**: the connected wallet must be the **minter**. Fill in VIN, **TÜV Car Inspection Wallet Address (recipient)**, brand, model, year, issue, repair shop, mileage, then *Register New Car NFT*. The app pins the JSON to IPFS and calls `storeCid(vin, cid, recipient)`. The NFT lands in the recipient's wallet; the CRT reward is also paid to the recipient.
-4. **Update an existing car**: any connected wallet works (POC behavior). The Recipient field is hidden because the NFT already exists; the update is applied to that VIN's existing NFT. Click *Submit Repair Update*.
+2. **Search**: enter a 17-char VIN and click _Load Car NFT_. The app reads the CID from the contract and fetches the metadata from Pinata's gateway. After this call the app knows whether the VIN already exists on-chain (controls which fields/buttons appear next).
+3. **Register a new car (mint)**: the connected wallet must be the **minter**. Fill in VIN, **TÜV Car Inspection Wallet Address (recipient)**, brand, model, year, issue, repair shop, mileage, then _Register New Car NFT_. The app pins the JSON to IPFS and calls `storeCid(vin, cid, recipient)`. The NFT lands in the recipient's wallet; the CRT reward is also paid to the recipient.
+4. **Update an existing car**: any connected wallet works (POC behavior). The Recipient field is hidden because the NFT already exists; the update is applied to that VIN's existing NFT. Click _Submit Repair Update_.
 5. After confirmation, the tx hash links to Sepolia Etherscan.
 
 ## Deploying the frontend to Vercel
@@ -281,7 +281,7 @@ The repo contains [frontend/vercel.json](frontend/vercel.json):
 ```json
 {
   "git": { "deploymentEnabled": { "dev": false } },
-  "rewrites": [ { "source": "/(.*)", "destination": "/" } ]
+  "rewrites": [{ "source": "/(.*)", "destination": "/" }]
 }
 ```
 
@@ -299,11 +299,11 @@ Two things wired here:
 5. **Build / Output**: defaults are fine (`npm run build` → `build/`).
 6. **Environment Variables** — add to the **Production** scope only:
 
-   | Variable | Value |
-   |---|---|
+   | Variable                           | Value                                                      |
+   | ---------------------------------- | ---------------------------------------------------------- |
    | `REACT_APP_SMART_CONTRACT_ADDRESS` | Sepolia registry address (from `deployments/sepolia.json`) |
-   | `REACT_APP_PINATA_API_URL` | `https://api.pinata.cloud/pinning` |
-   | `REACT_APP_PINATA_JWT` | Your Pinata JWT |
+   | `REACT_APP_PINATA_API_URL`         | `https://api.pinata.cloud/pinning`                         |
+   | `REACT_APP_PINATA_JWT`             | Your Pinata JWT                                            |
 
    Do **not** set `REACT_APP_SMART_CONTRACT_ADDRESS_LOCAL` — production users have no Hardhat node.
 
@@ -345,7 +345,7 @@ That file is the Netlify equivalent of the rewrite. It's harmless on Vercel — 
 - **Secrets in the bundle** — anything prefixed `REACT_APP_` ships to the browser. Scope the Pinata JWT to pinning only, and rotate if leaked.
 - **`No contracts to compile`** — this is Hardhat 3's normal "already up to date" message, not an error: it means every `.sol` file under `contracts/` already has a valid cached build, not that contracts weren't found. To force a full rebuild anyway (e.g. after a compiler/plugin change), run `npx hardhat clean && npm run compile`.
 - **NFT doesn't show up in MetaMask after minting** — expected. MetaMask's NFT auto-detection doesn't cover Hardhat's local chain (or reliably Sepolia). Use the app's **Show All Registered NFTs** button to verify the mint, or manually import the NFT in MetaMask with the contract address and token ID (see [Option 1 — Local deploy](#option-1--local-deploy-hardhat-no-sepolia)).
-- **CRT reward paid but not visible in MetaMask** — expected, not a failure (different from "Reward not received" above, which means the transfer didn't happen at all). MetaMask doesn't auto-detect arbitrary ERC-20 balances, and the reward always pays the mint's `recipient`, not the connected wallet. Check the receiving wallet, and manually add the CRT token via Assets → *Import tokens* (see [CRT (ERC-20) reward balance](#option-1--local-deploy-hardhat-no-sepolia)).
+- **CRT reward paid but not visible in MetaMask** — expected, not a failure (different from "Reward not received" above, which means the transfer didn't happen at all). MetaMask doesn't auto-detect arbitrary ERC-20 balances, and the reward always pays the mint's `recipient`, not the connected wallet. Check the receiving wallet, and manually add the CRT token via Assets → _Import tokens_ (see [CRT (ERC-20) reward balance](#option-1--local-deploy-hardhat-no-sepolia)).
 
 ## License
 

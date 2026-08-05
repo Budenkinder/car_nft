@@ -12,6 +12,34 @@ export const isValidVIN = (vin) => {
   return vinRegex.test(vin.toUpperCase());
 };
 
+// ADR 0035 org application validators. Kept permissive on format —
+// registration numbers, tax/VAT IDs, and similar identifiers vary widely
+// across European jurisdictions, so these check for "present and not an
+// obvious typo," not authoritative validation. The wallet address check is
+// the exception: it must be strict, since that's what gets granted ORG_ROLE.
+
+export const walletAddressRegex = /^0x[a-fA-F0-9]{40}$/;
+
+export const isValidWalletAddress = (address) => {
+  if (!address || typeof address !== "string") return false;
+  return walletAddressRegex.test(address);
+};
+
+// Deliberately permissive: accepts common patterns across EU VAT numbers
+// (e.g. "DE123456789") and free-form tax IDs, just requiring letters/digits/
+// spaces/hyphens and a plausible minimum length.
+export const isValidTaxOrVatId = (value) => {
+  if (!value || typeof value !== "string") return false;
+  const trimmed = value.trim();
+  return trimmed.length >= 4 && /^[A-Za-z0-9\s-]+$/.test(trimmed);
+};
+
+export const isValidRegistrationNumber = (value) => {
+  if (!value || typeof value !== "string") return false;
+  const trimmed = value.trim();
+  return trimmed.length >= 3 && /^[A-Za-z0-9\s/-]+$/.test(trimmed);
+};
+
 export const validateCarData = (carData) => {
   const errors = {};
 

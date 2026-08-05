@@ -32,6 +32,11 @@ export async function deployRegistryProxy(ethers, tokenAddress, initialMinter) {
 // `ethers` from the calling test file's own `network.create()` connection so
 // `networkHelpers.loadFixture` snapshots the same chain instance the test
 // asserts against.
+//
+// Calls `initializeV2(owner.address)` right after bootstrap (ADR 0035) so
+// every existing test sees the post-migration role shape: `owner` holds
+// `DEFAULT_ADMIN_ROLE`, and the incumbent `minter` holds `ORG_ROLE` — without
+// this, `storeCid` would revert for every test that mints as `minter`.
 export async function deployRegistryFixture(ethers) {
   const [owner, minter, recipient, other] = await ethers.getSigners();
 
@@ -40,6 +45,8 @@ export async function deployRegistryFixture(ethers) {
 
   const { registry, registryAddress, implementationAddress, Registry } =
     await deployRegistryProxy(ethers, tokenAddress, minter.address);
+
+  await registry.connect(owner).initializeV2(owner.address);
 
   const rewardAmount = ethers.parseUnits("10", 18);
   const rewardPool = ethers.parseUnits("1000000", 18);

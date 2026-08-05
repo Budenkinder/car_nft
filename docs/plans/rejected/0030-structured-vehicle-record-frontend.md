@@ -1,9 +1,9 @@
 # Plan 0030 — Structured vehicle record — Frontend
 
 - **ADR:** `docs/adr/0030-structured-vehicle-record.md`
-- **Paired plan:** `docs/plans/draft/0030-structured-vehicle-record-contracts.md`
+- **Paired plan:** `docs/plans/rejected/0030-structured-vehicle-record-contracts.md`
 - **GitHub Issue:** [#36](https://github.com/Budenkinder/car_nft/issues/36)
-- **Status:** draft
+- **Status:** rejected
 - **Date:** 2026-07-31
 
 > Plan files live in a subfolder named after their `Status:` value (`draft/`, `approved/`, `in-progress/`, `done/`, `rejected/`). New plans start in `docs/plans/draft/`. On every status transition, both files in the trio move together via `git mv`, and the ADR's `Related plans:` paths are rewritten in the same change. See [CLAUDE.md](../../../CLAUDE.md) for the full workflow.

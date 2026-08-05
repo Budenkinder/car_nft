@@ -4,6 +4,27 @@ One line per decision file under `docs/decisions/`. Newest first.
 
 Format: `- YYYY-MM-DD — [Title](YYYY-MM-DD-NNN-slug.md) — scope: <frontend|contracts|both> — status: <proposed|accepted|superseded>`
 
+- 2026-08-05 — [Plan 0035 transitioned in-progress → done; ADR 0035 bumped proposed → accepted; issue #43 closure blocked on `gh` token permissions](2026-08-05-010-plan-0035-in-progress-to-done.md) — scope: both — status: accepted
+- 2026-08-05 — [Sepolia upgraded to ship ADR 0035 + ADR 0037; discovered and fixed a missing `initializeV2` call](2026-08-05-009-sepolia-upgrade-and-initializeV2-gap.md) — scope: contracts — status: accepted
+- 2026-08-05 — [Plan 0037 transitioned in-progress → done; ADR 0037 bumped proposed → accepted; issue #44 closure blocked on `gh` token permissions](2026-08-05-008-plan-0037-in-progress-to-done.md) — scope: both — status: accepted
+- 2026-08-05 — [Plan 0037 transitioned approved → in-progress; autonomous implementation begins](2026-08-05-007-plan-0037-approved-to-in-progress.md) — scope: both — status: accepted
+- 2026-08-05 — [Plan 0037 transitioned draft → approved; issue #44 filed](2026-08-05-006-plan-0037-draft-to-approved.md) — scope: both — status: accepted
+- 2026-08-05 — [Organization applications include a real, mined on-chain transaction receipt — not just a better-presented signature](2026-08-05-005-application-includes-onchain-transaction-receipt.md) — scope: both — status: accepted
+- 2026-08-05 — [Auto-scroll the Submit section into view after signing in `OrgRegistrationForm`](2026-08-05-004-auto-scroll-org-registration-submit-section.md) — scope: frontend — status: accepted
+- 2026-08-05 — [Code review of `OrgRegistrationForm.jsx`: fixed a stale-wallet-address bug, an unmount race, stale UI messages, and untrimmed signed content](2026-08-05-003-org-registration-form-code-review-fixes.md) — scope: frontend — status: accepted
+- 2026-08-05 — [Trim `OrgRegistrationForm` down to Organization Identity + Wallet only](2026-08-05-002-trim-org-registration-form-to-identity-and-wallet.md) — scope: frontend — status: accepted
+- 2026-08-05 — [Trim `OrgRegistrationForm` down to legal name, registration number, tax/VAT ID, business address, chamber membership number, coverage expiry, wallet, references, and declarations](2026-08-05-001-trim-org-registration-form-fields.md) — scope: frontend — status: accepted
+- 2026-08-04 — [Fixed a BigInt sort crash in `getOrgRoleHolders`, found during manual verification](2026-08-04-006-fix-bigint-sort-crash-in-org-role-holders.md) — scope: frontend — status: accepted
+- 2026-08-04 — [ADR 0030's plan trio moved to `rejected/`; issue #36 closure blocked on `gh` token permissions](2026-08-04-005-adr-0030-plan-trio-rejected.md) — scope: both — status: accepted
+- 2026-08-04 — [Plan 0035 transitioned approved → in-progress; autonomous implementation begins](2026-08-04-004-plan-0035-approved-to-in-progress.md) — scope: both — status: accepted
+- 2026-08-04 — [Plan 0035 transitioned draft → approved; issue #43 filed](2026-08-04-003-plan-0035-draft-to-approved.md) — scope: both — status: accepted
+- 2026-08-04 — [Role grants get a dedicated terminal script; the frontend's org-wallet list is reconstructed from events, not `AccessControlEnumerableUpgradeable`](2026-08-04-002-terminal-role-script-and-event-based-org-list.md) — scope: both — status: accepted
+- 2026-08-04 — [The contract deployer EOA holds `DEFAULT_ADMIN_ROLE` and `owner()`; the 2-of-3 Gnosis Safe is dropped from ADR 0035](2026-08-04-001-deployer-eoa-replaces-safe-as-admin.md) — scope: contracts — status: accepted
+- 2026-08-03 — [The CRT pay-to-read economy is split into ADR 0036; ADR 0035 leaves rewards untouched](2026-08-03-005-defer-token-economy-to-adr-0036.md) — scope: both — status: accepted
+- 2026-08-03 — [ADR 0030's access-control half is absorbed into ADR 0035; its plan trio is rejected on 0035's approval](2026-08-03-004-merge-adr-0030-access-control-into-0035.md) — scope: both — status: accepted
+- 2026-08-03 — [A 2-of-3 Gnosis Safe holds `DEFAULT_ADMIN_ROLE` and `owner()`, replacing the single deployer EOA](2026-08-03-003-two-of-three-safe-as-admin.md) — scope: contracts — status: superseded (by [2026-08-04-001](2026-08-04-001-deployer-eoa-replaces-safe-as-admin.md))
+- 2026-08-03 — [KYB documents never touch IPFS or the chain; only the wallet address and its role go on-chain](2026-08-03-002-kyb-documents-stay-off-chain.md) — scope: both — status: accepted
+- 2026-08-03 — [Organization applications are collected in the browser and submitted by email — no backend, no queue](2026-08-03-001-org-application-intake-by-email.md) — scope: frontend — status: accepted
 - 2026-08-02 — [Plan 0027 transitioned in-progress → done; ADR 0027 bumped proposed → accepted; issue #42 closed](2026-08-02-008-plan-0027-in-progress-to-done.md) — scope: both — status: accepted
 - 2026-08-02 — [Rejection of plan 0013 reverted; trio returned to `approved/` and issue #41 reopened](2026-08-02-007-plan-0013-rejected-back-to-approved.md) — scope: both — status: accepted
 - 2026-08-02 — [Plan 0013 (Dev Container `.env` scaffolding) rejected; issue #41 closed as not planned](2026-08-02-006-plan-0013-approved-to-rejected.md) — scope: both — status: superseded (by [2026-08-02-007](2026-08-02-007-plan-0013-rejected-back-to-approved.md))
