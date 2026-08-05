@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { useState, useEffect, useRef } from "react";
 import PropTypes from "prop-types";
 import {
   Container,
@@ -8,8 +8,6 @@ import {
   TextField,
   Button,
   Divider,
-  Checkbox,
-  FormControlLabel,
   Box,
   CircularProgress,
 } from "@mui/material";
@@ -17,8 +15,6 @@ import {
   isValidWalletAddress,
   isValidTaxOrVatId,
   isValidRegistrationNumber,
-  isValidEmail,
-  isValidExpiryDate,
 } from "../utils/validation";
 import {
   buildChallengeMessage,
@@ -36,23 +32,6 @@ const initialFields = {
   registrationNumber: "",
   taxOrVatId: "",
   businessAddress: "",
-  foundedDate: "",
-  craftsmanCertificate: "",
-  chamberMembershipNumber: "",
-  specialization: "",
-  insuranceProvider: "",
-  policyNumber: "",
-  coverageExpiry: "",
-  contactName: "",
-  contactRole: "",
-  contactEmail: "",
-  contactPhone: "",
-  website: "",
-  references: "",
-  accuracyConfirmed: false,
-  fraudBanAcknowledged: false,
-  declarationName: "",
-  declarationDate: "",
 };
 
 // ADR 0035: the public application page. Collects the KYB application and a
@@ -68,6 +47,26 @@ export default function OrgRegistrationForm({ walletAddress, onBack }) {
   const [isSigning, setIsSigning] = useState(false);
   const [copyStatus, setCopyStatus] = useState("");
 
+  const isMountedRef = useRef(true);
+  useEffect(
+    () => () => {
+      isMountedRef.current = false;
+    },
+    []
+  );
+
+  // The wallet field defaults to whatever is connected, but only at mount —
+  // useState's initializer doesn't re-run. Without this, switching accounts
+  // in MetaMask while this page is open leaves the field pointing at the
+  // wallet that was connected when the page opened, and any signature
+  // already collected would be over the wrong address.
+  useEffect(() => {
+    if (!walletAddress) return;
+    setFields((prev) => ({ ...prev, walletAddress }));
+    setSignature("");
+    setChallenge("");
+  }, [walletAddress]);
+
   const setField = (name) => (event) => {
     const value = event.target.type === "checkbox" ? event.target.checked : event.target.value;
     setFields((prev) => ({ ...prev, [name]: value }));
@@ -77,6 +76,8 @@ export default function OrgRegistrationForm({ walletAddress, onBack }) {
       setSignature("");
       setChallenge("");
     }
+    setCopyStatus("");
+    setErrors((prev) => (prev.general ? { ...prev, general: undefined } : prev));
   };
 
   const validate = () => {
@@ -87,37 +88,9 @@ export default function OrgRegistrationForm({ walletAddress, onBack }) {
     if (!isValidTaxOrVatId(fields.taxOrVatId)) newErrors.taxOrVatId = "Tax/VAT ID is required";
     if (!fields.businessAddress.trim())
       newErrors.businessAddress = "Business address is required";
-    if (!fields.foundedDate) newErrors.foundedDate = "Founded date is required";
-
-    if (!fields.craftsmanCertificate.trim())
-      newErrors.craftsmanCertificate = "Craftsman certificate reference is required";
-    if (!fields.chamberMembershipNumber.trim())
-      newErrors.chamberMembershipNumber = "Chamber membership number is required";
-    if (!fields.specialization.trim())
-      newErrors.specialization = "Specialization is required";
-
-    if (!fields.insuranceProvider.trim())
-      newErrors.insuranceProvider = "Insurance provider is required";
-    if (!fields.policyNumber.trim()) newErrors.policyNumber = "Policy number is required";
-    if (!isValidExpiryDate(fields.coverageExpiry))
-      newErrors.coverageExpiry = "Coverage expiry date is required";
-
-    if (!fields.contactName.trim()) newErrors.contactName = "Contact name is required";
-    if (!fields.contactRole.trim()) newErrors.contactRole = "Contact role is required";
-    if (!isValidEmail(fields.contactEmail))
-      newErrors.contactEmail = "A valid business email is required";
-    if (!fields.contactPhone.trim()) newErrors.contactPhone = "Contact phone is required";
 
     if (!isValidWalletAddress(fields.walletAddress))
       newErrors.walletAddress = "A valid wallet address is required";
-
-    if (!fields.accuracyConfirmed)
-      newErrors.accuracyConfirmed = "You must confirm the information is accurate";
-    if (!fields.fraudBanAcknowledged)
-      newErrors.fraudBanAcknowledged = "You must acknowledge the fraud-ban policy";
-    if (!fields.declarationName.trim())
-      newErrors.declarationName = "Typed name is required";
-    if (!fields.declarationDate) newErrors.declarationDate = "Declaration date is required";
 
     setErrors(newErrors);
     return Object.keys(newErrors).length === 0;
@@ -140,13 +113,15 @@ export default function OrgRegistrationForm({ walletAddress, onBack }) {
     setIsSigning(true);
     setErrors((prev) => ({ ...prev, general: undefined }));
     try {
-      const message = buildChallengeMessage(fields.legalName);
+      const message = buildChallengeMessage(fields.legalName.trim());
       const sig = await signChallenge(message, walletAddress);
+      if (!isMountedRef.current) return;
       setChallenge(message);
       setSignature(sig);
       uiLog.info("orgRegistration:signed", { walletAddress });
     } catch (error) {
       uiLog.warn("orgRegistration:sign_failed", { message: error.message });
+      if (!isMountedRef.current) return;
       setErrors((prev) => ({
         ...prev,
         general:
@@ -155,12 +130,22 @@ export default function OrgRegistrationForm({ walletAddress, onBack }) {
             : `Failed to sign: ${error.message}`,
       }));
     } finally {
-      setIsSigning(false);
+      if (isMountedRef.current) setIsSigning(false);
     }
   };
 
   const emailBody = signature
-    ? buildApplicationEmailBody(fields, challenge, signature)
+    ? buildApplicationEmailBody(
+        {
+          legalName: fields.legalName.trim(),
+          registrationNumber: fields.registrationNumber.trim(),
+          taxOrVatId: fields.taxOrVatId.trim(),
+          businessAddress: fields.businessAddress.trim(),
+          walletAddress: fields.walletAddress.trim(),
+        },
+        challenge,
+        signature
+      )
     : "";
   const bodyIsLong = emailBody.length > MAILTO_LENGTH_WARNING_THRESHOLD;
 
@@ -168,7 +153,7 @@ export default function OrgRegistrationForm({ walletAddress, onBack }) {
     try {
       await navigator.clipboard.writeText(emailBody);
       setCopyStatus("Copied to clipboard.");
-    } catch (error) {
+    } catch {
       setCopyStatus("Could not copy automatically — select and copy the text below manually.");
     }
   };
@@ -234,16 +219,6 @@ export default function OrgRegistrationForm({ walletAddress, onBack }) {
                 error={!!errors.businessAddress}
                 helperText={errors.businessAddress}
               />
-              <TextField
-                label="Founded date"
-                type="date"
-                fullWidth
-                InputLabelProps={{ shrink: true }}
-                value={fields.foundedDate}
-                onChange={setField("foundedDate")}
-                error={!!errors.foundedDate}
-                helperText={errors.foundedDate}
-              />
             </Stack>
           </Box>
 
@@ -251,123 +226,7 @@ export default function OrgRegistrationForm({ walletAddress, onBack }) {
 
           <Box>
             <Typography variant="subtitle1" gutterBottom>
-              2. Trade Qualification
-            </Typography>
-            <Stack spacing={2}>
-              <TextField
-                label="Craftsman certificate (reference / number)"
-                fullWidth
-                value={fields.craftsmanCertificate}
-                onChange={setField("craftsmanCertificate")}
-                error={!!errors.craftsmanCertificate}
-                helperText={
-                  errors.craftsmanCertificate || "Attach a copy of the certificate to the email"
-                }
-              />
-              <TextField
-                label="Chamber membership number"
-                fullWidth
-                value={fields.chamberMembershipNumber}
-                onChange={setField("chamberMembershipNumber")}
-                error={!!errors.chamberMembershipNumber}
-                helperText={errors.chamberMembershipNumber}
-              />
-              <TextField
-                label="Specialization"
-                fullWidth
-                value={fields.specialization}
-                onChange={setField("specialization")}
-                error={!!errors.specialization}
-                helperText={errors.specialization}
-              />
-            </Stack>
-          </Box>
-
-          <Divider />
-
-          <Box>
-            <Typography variant="subtitle1" gutterBottom>
-              3. Insurance
-            </Typography>
-            <Stack spacing={2}>
-              <TextField
-                label="Provider"
-                fullWidth
-                value={fields.insuranceProvider}
-                onChange={setField("insuranceProvider")}
-                error={!!errors.insuranceProvider}
-                helperText={errors.insuranceProvider}
-              />
-              <TextField
-                label="Policy number"
-                fullWidth
-                value={fields.policyNumber}
-                onChange={setField("policyNumber")}
-                error={!!errors.policyNumber}
-                helperText={
-                  errors.policyNumber || "Attach a copy of the policy certificate to the email"
-                }
-              />
-              <TextField
-                label="Coverage expiry"
-                type="date"
-                fullWidth
-                InputLabelProps={{ shrink: true }}
-                value={fields.coverageExpiry}
-                onChange={setField("coverageExpiry")}
-                error={!!errors.coverageExpiry}
-                helperText={errors.coverageExpiry}
-              />
-            </Stack>
-          </Box>
-
-          <Divider />
-
-          <Box>
-            <Typography variant="subtitle1" gutterBottom>
-              4. Contact Person
-            </Typography>
-            <Stack spacing={2}>
-              <TextField
-                label="Name"
-                fullWidth
-                value={fields.contactName}
-                onChange={setField("contactName")}
-                error={!!errors.contactName}
-                helperText={errors.contactName}
-              />
-              <TextField
-                label="Role"
-                fullWidth
-                value={fields.contactRole}
-                onChange={setField("contactRole")}
-                error={!!errors.contactRole}
-                helperText={errors.contactRole}
-              />
-              <TextField
-                label="Business email"
-                fullWidth
-                value={fields.contactEmail}
-                onChange={setField("contactEmail")}
-                error={!!errors.contactEmail}
-                helperText={errors.contactEmail}
-              />
-              <TextField
-                label="Phone"
-                fullWidth
-                value={fields.contactPhone}
-                onChange={setField("contactPhone")}
-                error={!!errors.contactPhone}
-                helperText={errors.contactPhone}
-              />
-            </Stack>
-          </Box>
-
-          <Divider />
-
-          <Box>
-            <Typography variant="subtitle1" gutterBottom>
-              5. Wallet
+              2. Wallet
             </Typography>
             <Stack spacing={2}>
               <TextField
@@ -395,85 +254,6 @@ export default function OrgRegistrationForm({ walletAddress, onBack }) {
                   application before approval.
                 </Typography>
               )}
-            </Stack>
-          </Box>
-
-          <Divider />
-
-          <Box>
-            <Typography variant="subtitle1" gutterBottom>
-              6. Supporting Evidence
-            </Typography>
-            <Stack spacing={2}>
-              <TextField
-                label="Website (optional)"
-                fullWidth
-                value={fields.website}
-                onChange={setField("website")}
-              />
-              <TextField
-                label="References (optional, free text)"
-                fullWidth
-                multiline
-                value={fields.references}
-                onChange={setField("references")}
-              />
-            </Stack>
-          </Box>
-
-          <Divider />
-
-          <Box>
-            <Typography variant="subtitle1" gutterBottom>
-              7. Declarations
-            </Typography>
-            <Stack spacing={1}>
-              <FormControlLabel
-                control={
-                  <Checkbox
-                    checked={fields.accuracyConfirmed}
-                    onChange={setField("accuracyConfirmed")}
-                  />
-                }
-                label="I confirm the information provided is accurate"
-              />
-              {errors.accuracyConfirmed && (
-                <Typography variant="caption" color="error">
-                  {errors.accuracyConfirmed}
-                </Typography>
-              )}
-              <FormControlLabel
-                control={
-                  <Checkbox
-                    checked={fields.fraudBanAcknowledged}
-                    onChange={setField("fraudBanAcknowledged")}
-                  />
-                }
-                label="I acknowledge that fraudulent applications result in a permanent ban"
-              />
-              {errors.fraudBanAcknowledged && (
-                <Typography variant="caption" color="error">
-                  {errors.fraudBanAcknowledged}
-                </Typography>
-              )}
-              <TextField
-                label="Typed name"
-                fullWidth
-                value={fields.declarationName}
-                onChange={setField("declarationName")}
-                error={!!errors.declarationName}
-                helperText={errors.declarationName}
-              />
-              <TextField
-                label="Date"
-                type="date"
-                fullWidth
-                InputLabelProps={{ shrink: true }}
-                value={fields.declarationDate}
-                onChange={setField("declarationDate")}
-                error={!!errors.declarationDate}
-                helperText={errors.declarationDate}
-              />
             </Stack>
           </Box>
 

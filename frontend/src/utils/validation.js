@@ -40,22 +40,6 @@ export const isValidRegistrationNumber = (value) => {
   return trimmed.length >= 3 && /^[A-Za-z0-9\s/-]+$/.test(trimmed);
 };
 
-export const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
-
-export const isValidEmail = (value) => {
-  if (!value || typeof value !== "string") return false;
-  return emailRegex.test(value.trim());
-};
-
-// HTML `<input type="date">` fields report YYYY-MM-DD — just confirm it
-// parses to a real calendar date, not that it's in the future (an applicant
-// might reasonably need to re-enter a lapsed policy while renewing).
-export const isValidExpiryDate = (value) => {
-  if (!value || typeof value !== "string") return false;
-  const parsed = new Date(value);
-  return !isNaN(parsed.getTime());
-};
-
 export const validateCarData = (carData) => {
   const errors = {};
 

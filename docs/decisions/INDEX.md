@@ -4,6 +4,9 @@ One line per decision file under `docs/decisions/`. Newest first.
 
 Format: `- YYYY-MM-DD — [Title](YYYY-MM-DD-NNN-slug.md) — scope: <frontend|contracts|both> — status: <proposed|accepted|superseded>`
 
+- 2026-08-05 — [Code review of `OrgRegistrationForm.jsx`: fixed a stale-wallet-address bug, an unmount race, stale UI messages, and untrimmed signed content](2026-08-05-003-org-registration-form-code-review-fixes.md) — scope: frontend — status: accepted
+- 2026-08-05 — [Trim `OrgRegistrationForm` down to Organization Identity + Wallet only](2026-08-05-002-trim-org-registration-form-to-identity-and-wallet.md) — scope: frontend — status: accepted
+- 2026-08-05 — [Trim `OrgRegistrationForm` down to legal name, registration number, tax/VAT ID, business address, chamber membership number, coverage expiry, wallet, references, and declarations](2026-08-05-001-trim-org-registration-form-fields.md) — scope: frontend — status: accepted
 - 2026-08-04 — [Fixed a BigInt sort crash in `getOrgRoleHolders`, found during manual verification](2026-08-04-006-fix-bigint-sort-crash-in-org-role-holders.md) — scope: frontend — status: accepted
 - 2026-08-04 — [ADR 0030's plan trio moved to `rejected/`; issue #36 closure blocked on `gh` token permissions](2026-08-04-005-adr-0030-plan-trio-rejected.md) — scope: both — status: accepted
 - 2026-08-04 — [Plan 0035 transitioned approved → in-progress; autonomous implementation begins](2026-08-04-004-plan-0035-approved-to-in-progress.md) — scope: both — status: accepted

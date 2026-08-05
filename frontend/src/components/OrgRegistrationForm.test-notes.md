@@ -32,7 +32,7 @@ any wallet address — used throughout below.
 ## Task 12 — application flow
 
 1. From the not-approved state, open the registration page.
-2. Fill all seven sections. Leave one required field empty and try to sign —
+2. Fill both sections (Organization Identity, Wallet). Leave one required field empty and try to sign —
    expect inline validation errors, no signature prompt.
 3. Fill the remaining fields and click "Sign challenge with MetaMask".
    Expect a MetaMask `personal_sign` prompt showing the exact challenge text
