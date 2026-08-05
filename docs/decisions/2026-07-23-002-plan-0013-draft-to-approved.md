@@ -1,7 +1,7 @@
 ---
 date: 2026-07-23
 scope: both
-status: accepted
+status: superseded
 related_adr: 0013-devcontainer-env-scaffolding
 supersedes: none
 ---

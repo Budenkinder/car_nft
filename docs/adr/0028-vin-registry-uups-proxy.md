@@ -1,11 +1,11 @@
 # ADR 0028: Make `VinCidRegistry` upgradeable via a UUPS proxy so registered VIN/CID data survives contract upgrades
 
-- **Status:** proposed
+- **Status:** accepted
 - **Date:** 2026-07-29
 - **Scope:** both
 - **Related plans:**
-  - `docs/plans/draft/0028-vin-registry-uups-proxy-frontend.md`
-  - `docs/plans/draft/0028-vin-registry-uups-proxy-contracts.md`
+  - `docs/plans/done/0028-vin-registry-uups-proxy-frontend.md`
+  - `docs/plans/done/0028-vin-registry-uups-proxy-contracts.md`
 - **Related decisions:** `docs/decisions/2026-07-29-012-vin-registry-uups-proxy-chosen.md`
 
 ## Context

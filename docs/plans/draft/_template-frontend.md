@@ -2,6 +2,7 @@
 
 - **ADR:** `docs/adr/NNNN-<slug>.md`
 - **Paired plan:** `docs/plans/<status>/NNNN-<slug>-contracts.md`
+- **GitHub Issue:** [#NN](https://github.com/Budenkinder/car_nft/issues/NN) (required from `approved/` onward — see CLAUDE.md §2a; omit while still in `draft/` if no issue is filed yet)
 - **Status:** draft | approved | in-progress | done | rejected
 - **Date:** YYYY-MM-DD
 

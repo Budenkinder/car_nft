@@ -2,6 +2,7 @@
 
 - **ADR:** `docs/adr/0013-devcontainer-env-scaffolding.md`
 - **Paired plan:** `docs/plans/approved/0013-devcontainer-env-scaffolding-contracts.md`
+- **GitHub Issue:** [#41](https://github.com/Budenkinder/car_nft/issues/41)
 - **Status:** approved
 - **Date:** 2026-07-23
 

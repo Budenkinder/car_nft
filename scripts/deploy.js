@@ -77,6 +77,17 @@ async function main() {
   console.log("VinCidRegistry (proxy):", registryAddress);
   const registry = VinCidRegistry.attach(registryAddress);
 
+  // ADR 0035: bootstrap the role model. The deployer becomes
+  // DEFAULT_ADMIN_ROLE (able to grant/revoke ORG_ROLE later, e.g. via
+  // scripts/manage-org-role.js) — no Safe/multisig, per decision
+  // 2026-08-04-001. initializeV2 also grants ORG_ROLE to whatever `minter`
+  // was just set to above, so initialMinter can mint immediately with no
+  // separate grant needed.
+  console.log("\nBootstrapping roles (ADR 0035)...");
+  await (await registry.initializeV2(deployer.address)).wait();
+  console.log("  DEFAULT_ADMIN_ROLE:", deployer.address);
+  console.log("  ORG_ROLE:          ", initialMinter);
+
   // Deployment block, so the frontend can bound its `CidStored` event scan
   // with `fromBlock` instead of scanning from genesis (ADR 0027). This is the
   // proxy's own deployment block — `CidStored` is always emitted at the

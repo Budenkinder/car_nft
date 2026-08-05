@@ -36,16 +36,9 @@ describe("VinCidRegistry", function () {
       ).to.be.revertedWith("Minter required");
     });
 
-    it("sets the minter and emits MinterChanged on deploy", async function () {
+    it("sets minter() on deploy (deprecated storage, retained for layout compatibility)", async function () {
       const { tokenAddress, minter } = await networkHelpers.loadFixture(fixture);
-      const { registry, proxyDeploymentTransaction } = await deployRegistryProxy(
-        ethers,
-        tokenAddress,
-        minter.address
-      );
-      await expect(proxyDeploymentTransaction)
-        .to.emit(registry, "MinterChanged")
-        .withArgs(ethers.ZeroAddress, minter.address);
+      const { registry } = await deployRegistryProxy(ethers, tokenAddress, minter.address);
       expect(await registry.minter()).to.equal(minter.address);
     });
 
@@ -101,11 +94,11 @@ describe("VinCidRegistry", function () {
       ).to.be.revertedWith("CID required");
     });
 
-    it("reverts when called by anyone other than the minter", async function () {
+    it("reverts when called by a wallet without ORG_ROLE", async function () {
       const { registry, other, recipient } = await networkHelpers.loadFixture(fixture);
       await expect(
         registry.connect(other).storeCid(VIN_A, CID_A, recipient.address)
-      ).to.be.revertedWith("Only minter can mint");
+      ).to.be.revertedWith("Not an approved organization");
     });
 
     it("reverts when recipient is the zero address", async function () {
@@ -125,14 +118,14 @@ describe("VinCidRegistry", function () {
       return state;
     }
 
-    it("allows any caller to update the CID without minting a new token or paying a reward again", async function () {
-      const { registry, token, other, recipient, rewardAmount } =
+    it("allows an ORG_ROLE wallet to update the CID without minting a new token or paying a reward again", async function () {
+      const { registry, token, minter, recipient, rewardAmount } =
         await networkHelpers.loadFixture(mintedFixture);
       const tokenId = tokenIdFor(VIN_A);
       const balanceBefore = await token.balanceOf(recipient.address);
       expect(balanceBefore).to.equal(rewardAmount);
 
-      await expect(registry.connect(other).storeCid(VIN_A, CID_B, ethers.ZeroAddress))
+      await expect(registry.connect(minter).storeCid(VIN_A, CID_B, ethers.ZeroAddress))
         .to.emit(registry, "CidStored")
         .withArgs(VIN_A, CID_B, tokenId);
 
@@ -142,29 +135,12 @@ describe("VinCidRegistry", function () {
       expect(await registry.getAllVins()).to.deep.equal([VIN_A]); // no duplicate entry
       expect(await token.balanceOf(recipient.address)).to.equal(balanceBefore); // no second reward
     });
-  });
 
-  describe("admin: setMinter", function () {
-    it("reverts for a non-owner caller", async function () {
-      const { registry, other } = await networkHelpers.loadFixture(fixture);
-      await expect(registry.connect(other).setMinter(other.address))
-        .to.be.revertedWithCustomError(registry, "OwnableUnauthorizedAccount")
-        .withArgs(other.address);
-    });
-
-    it("reverts when the new minter is the zero address", async function () {
-      const { registry, owner } = await networkHelpers.loadFixture(fixture);
+    it("reverts when a non-org wallet tries to update an existing VIN (ADR 0035 regression)", async function () {
+      const { registry, other } = await networkHelpers.loadFixture(mintedFixture);
       await expect(
-        registry.connect(owner).setMinter(ethers.ZeroAddress)
-      ).to.be.revertedWith("Minter required");
-    });
-
-    it("emits MinterChanged and updates minter() on success", async function () {
-      const { registry, owner, minter, other } = await networkHelpers.loadFixture(fixture);
-      await expect(registry.connect(owner).setMinter(other.address))
-        .to.emit(registry, "MinterChanged")
-        .withArgs(minter.address, other.address);
-      expect(await registry.minter()).to.equal(other.address);
+        registry.connect(other).storeCid(VIN_A, CID_B, ethers.ZeroAddress)
+      ).to.be.revertedWith("Not an approved organization");
     });
   });
 

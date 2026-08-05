@@ -1,8 +1,9 @@
 # Plan 0027 — NFT transaction provenance link — Frontend
 
 - **ADR:** `docs/adr/0027-nft-transaction-provenance-link.md`
-- **Paired plan:** `docs/plans/in-progress/0027-nft-transaction-provenance-link-contracts.md`
-- **Status:** in-progress
+- **Paired plan:** `docs/plans/done/0027-nft-transaction-provenance-link-contracts.md`
+- **GitHub Issue:** [#42](https://github.com/Budenkinder/car_nft/issues/42)
+- **Status:** done
 - **Date:** 2026-07-28
 
 > Plan files live in a subfolder named after their `Status:` value (`draft/`, `approved/`, `in-progress/`, `done/`, `rejected/`). New plans start in `docs/plans/draft/`. On every status transition, both files in the trio move together via `git mv`, and the ADR's `Related plans:` paths are rewritten in the same change. See [CLAUDE.md](../../../CLAUDE.md) for the full workflow.
@@ -41,8 +42,9 @@ Add a per-VIN transaction history, reconstructed from past `CidStored` events, a
 - No existing automated frontend tests cover this area; none added here, consistent with this repo's manual-verification approach for UI/wallet flows (see `docs/memory/frontend/`).
 - **Done (this session):** verified the underlying event-reconstruction logic end-to-end against a real local Hardhat deploy (see task 5's verification note) — confirms `getTransactionHistoryForVin`'s query/filter/sort is correct against actual on-chain events, using the exact `fromBlock: deployedAtBlock` value the paired contracts plan's deploy-script change produces.
 - **Done (this session), triggered by a real user-reported error:** the user hit `range 11376833 exceeds limit of 10000` testing VIN `WBADT33383G473810` against live Sepolia. Root-caused and fixed (chunked queries + backfilled `deployedAtBlock`, see task 2's deviation note); re-verified directly against the real Sepolia RPC endpoint (not a local node) using the exact fixed logic — returned the correct single history entry for that VIN, at the exact block number (`11376833`) the original error referenced, in ~161ms.
-- **Not completed by the assistant** — requires a real browser + MetaMask, unavailable in this sandbox: (a) register a new VIN in the actual UI — confirm the history list renders exactly one "Registration" entry whose tx hash matches the existing success banner. (b) Load that same VIN later via "Load Car NFT" — confirm the same entry reappears. (c) Submit an update — confirm the history now shows two entries, oldest (Registration) first, newest (Update) second, both linking correctly.
-- **Deferred by the user to post-merge (2026-07-29):** the user has set `REACT_APP_SMART_CONTRACT_DEPLOY_BLOCK=11371335` in Vercel's Production environment variables (Production tracks `main`; this implementation is on `dev`). Manual verification of (a)-(c) will happen after merging `dev` → `main`, not before. This plan stays `in-progress` until that confirmation lands — do not move to `done` on implementation completeness alone.
+- **Completed by the user on 2026-08-02** — reported as "verification done", which released the hold below and moved this plan to `done/` (see `docs/decisions/2026-08-02-008-plan-0027-in-progress-to-done.md`). The three checks (a)-(c) were run by the user in a real browser; no per-step results or screenshots were relayed, so this record reflects their confirmation rather than assistant-observed output.
+- **Not completable by the assistant** — requires a real browser + MetaMask, unavailable in this sandbox: (a) register a new VIN in the actual UI — confirm the history list renders exactly one "Registration" entry whose tx hash matches the existing success banner. (b) Load that same VIN later via "Load Car NFT" — confirm the same entry reappears. (c) Submit an update — confirm the history now shows two entries, oldest (Registration) first, newest (Update) second, both linking correctly.
+- ~~**Deferred by the user to post-merge (2026-07-29):** the user has set `REACT_APP_SMART_CONTRACT_DEPLOY_BLOCK=11371335` in Vercel's Production environment variables (Production tracks `main`; this implementation is on `dev`). Manual verification of (a)-(c) will happen after merging `dev` → `main`, not before. This plan stays `in-progress` until that confirmation lands — do not move to `done` on implementation completeness alone.~~ **Released 2026-08-02:** verification confirmed by the user; the hold is satisfied and the plan moved to `done/`.
 
 ## Risks and Rollback
 
