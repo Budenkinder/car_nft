@@ -241,6 +241,61 @@ export const getOrgRoleHolders = async (chainId) => {
   }
 };
 
+// ADR 0037: sends the minimal, permissionless `submitApplication()` transaction
+// so an org-registration applicant gets a real, mined transaction hash to put
+// in their application email. No application content is ever sent as an
+// argument — the contract accepts none (decision 2026-08-03-002).
+export const submitApplicationReceipt = async (walletAddress, chainId) => {
+  txLog.info("submitApplicationReceipt:start", { walletAddress, chainId });
+
+  if (!window.ethereum) {
+    throw new Error("Please install MetaMask.");
+  }
+
+  const web3 = new Web3(window.ethereum);
+  const address = getContractAddress(chainId);
+  if (!address) {
+    throw new Error(`No contract configured for chainId ${chainId}`);
+  }
+
+  const code = await web3.eth.getCode(address);
+  if (code === "0x" || code === "0x0") {
+    throw new Error(`No contract deployed at ${address} on chain ${chainId}`);
+  }
+
+  const contract = new web3.eth.Contract(contractAbi, address);
+  const method = contract.methods.submitApplication();
+
+  const gasEstimate = await method.estimateGas({ from: walletAddress });
+  const gas = Math.ceil(Number(gasEstimate) * 1.2);
+  txLog.info("submitApplicationReceipt:gas", {
+    estimate: gasEstimate.toString(),
+    withBuffer: gas,
+  });
+
+  const sentAt = Date.now();
+  let receipt;
+  try {
+    receipt = await method.send({ from: walletAddress, gas });
+  } catch (error) {
+    txLog.error("submitApplicationReceipt:send:failed", {
+      tookMs: Date.now() - sentAt,
+      code: error.code,
+      message: error.message,
+    });
+    throw error;
+  }
+
+  txLog.info("submitApplicationReceipt:mined", {
+    txHash: receipt.transactionHash,
+    blockNumber: receipt.blockNumber?.toString?.() ?? receipt.blockNumber,
+    status: receipt.status?.toString?.() ?? receipt.status,
+    tookMs: Date.now() - sentAt,
+  });
+
+  return { txHash: receipt.transactionHash, blockNumber: Number(receipt.blockNumber) };
+};
+
 const storeCidOnBlockchain = async (vin, cid, recipient, chainId) => {
   txLog.info("storeCid:start", { vin, cid, recipient, chainId });
 

@@ -35,7 +35,13 @@ export const signChallenge = async (message, walletAddress) => {
 // fallback rather than let an applicant discover truncation after the fact.
 export const MAILTO_LENGTH_WARNING_THRESHOLD = 2000;
 
-export const buildApplicationEmailBody = (fields, challenge, signature) => {
+// ADR 0037: matches the existing (hardcoded-to-Sepolia) block-explorer link
+// convention already used in App.js — this app has no other network-aware
+// explorer helper, so this stays consistent with that rather than inventing
+// a new pattern for a single call site.
+export const buildExplorerTxLink = (txHash) => `https://sepolia.etherscan.io/tx/${txHash}`;
+
+export const buildApplicationEmailBody = (fields, challenge, signature, txHash) => {
   const lines = [
     "ORGANIZATION APPLICATION — car_nft ORG_ROLE registration",
     "",
@@ -49,6 +55,10 @@ export const buildApplicationEmailBody = (fields, challenge, signature) => {
     `Address: ${fields.walletAddress}`,
     `Signed challenge: ${challenge}`,
     `Signature: ${signature}`,
+    "",
+    "== 3. On-chain Receipt ==",
+    `Transaction hash: ${txHash}`,
+    `View on block explorer: ${buildExplorerTxLink(txHash)}`,
     "",
     "== Documents to attach to this email ==",
     "- Craftsman certificate / trade qualification proof",

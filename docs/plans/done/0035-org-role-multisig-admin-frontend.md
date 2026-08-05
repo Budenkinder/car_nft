@@ -1,9 +1,9 @@
 # Plan 0035 — Org role + deployer-EOA admin — Frontend
 
 - **ADR:** `docs/adr/0035-org-role-multisig-admin.md`
-- **Paired plan:** `docs/plans/in-progress/0035-org-role-multisig-admin-contracts.md`
+- **Paired plan:** `docs/plans/done/0035-org-role-multisig-admin-contracts.md`
 - **GitHub Issue:** [#43](https://github.com/Budenkinder/car_nft/issues/43)
-- **Status:** in-progress
+- **Status:** done
 - **Date:** 2026-08-03
 
 > Plan files live in a subfolder named after their `Status:` value (`draft/`, `approved/`, `in-progress/`, `done/`, `rejected/`). New plans start in `docs/plans/draft/`. On every status transition, both files in the trio move together via `git mv`, and the ADR's `Related plans:` paths are rewritten in the same change. See [CLAUDE.md](../../../CLAUDE.md) for the full workflow.

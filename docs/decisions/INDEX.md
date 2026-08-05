@@ -4,6 +4,13 @@ One line per decision file under `docs/decisions/`. Newest first.
 
 Format: `- YYYY-MM-DD — [Title](YYYY-MM-DD-NNN-slug.md) — scope: <frontend|contracts|both> — status: <proposed|accepted|superseded>`
 
+- 2026-08-05 — [Plan 0035 transitioned in-progress → done; ADR 0035 bumped proposed → accepted; issue #43 closure blocked on `gh` token permissions](2026-08-05-010-plan-0035-in-progress-to-done.md) — scope: both — status: accepted
+- 2026-08-05 — [Sepolia upgraded to ship ADR 0035 + ADR 0037; discovered and fixed a missing `initializeV2` call](2026-08-05-009-sepolia-upgrade-and-initializeV2-gap.md) — scope: contracts — status: accepted
+- 2026-08-05 — [Plan 0037 transitioned in-progress → done; ADR 0037 bumped proposed → accepted; issue #44 closure blocked on `gh` token permissions](2026-08-05-008-plan-0037-in-progress-to-done.md) — scope: both — status: accepted
+- 2026-08-05 — [Plan 0037 transitioned approved → in-progress; autonomous implementation begins](2026-08-05-007-plan-0037-approved-to-in-progress.md) — scope: both — status: accepted
+- 2026-08-05 — [Plan 0037 transitioned draft → approved; issue #44 filed](2026-08-05-006-plan-0037-draft-to-approved.md) — scope: both — status: accepted
+- 2026-08-05 — [Organization applications include a real, mined on-chain transaction receipt — not just a better-presented signature](2026-08-05-005-application-includes-onchain-transaction-receipt.md) — scope: both — status: accepted
+- 2026-08-05 — [Auto-scroll the Submit section into view after signing in `OrgRegistrationForm`](2026-08-05-004-auto-scroll-org-registration-submit-section.md) — scope: frontend — status: accepted
 - 2026-08-05 — [Code review of `OrgRegistrationForm.jsx`: fixed a stale-wallet-address bug, an unmount race, stale UI messages, and untrimmed signed content](2026-08-05-003-org-registration-form-code-review-fixes.md) — scope: frontend — status: accepted
 - 2026-08-05 — [Trim `OrgRegistrationForm` down to Organization Identity + Wallet only](2026-08-05-002-trim-org-registration-form-to-identity-and-wallet.md) — scope: frontend — status: accepted
 - 2026-08-05 — [Trim `OrgRegistrationForm` down to legal name, registration number, tax/VAT ID, business address, chamber membership number, coverage expiry, wallet, references, and declarations](2026-08-05-001-trim-org-registration-form-fields.md) — scope: frontend — status: accepted

@@ -1,9 +1,9 @@
 # Plan 0035 — Org role + deployer-EOA admin — Contracts
 
 - **ADR:** `docs/adr/0035-org-role-multisig-admin.md`
-- **Paired plan:** `docs/plans/in-progress/0035-org-role-multisig-admin-frontend.md`
+- **Paired plan:** `docs/plans/done/0035-org-role-multisig-admin-frontend.md`
 - **GitHub Issue:** [#43](https://github.com/Budenkinder/car_nft/issues/43)
-- **Status:** in-progress
+- **Status:** done
 - **Date:** 2026-08-03
 
 > Plan files live in a subfolder named after their `Status:` value (`draft/`, `approved/`, `in-progress/`, `done/`, `rejected/`). New plans start in `docs/plans/draft/`. On every status transition, both files in the trio move together via `git mv`, and the ADR's `Related plans:` paths are rewritten in the same change. See [CLAUDE.md](../../../CLAUDE.md) for the full workflow.
@@ -27,7 +27,8 @@ Out of scope:
 | `contracts/car_nft_sc.sol` | modify | inherit `AccessControlUpgradeable`; `ORG_ROLE`/`VERIFIER_ROLE` constants; `initializeV2` reinitializer; gate both branches of `storeCid`; remove `setMinter`/`MinterChanged` |
 | `scripts/deploy.js` | modify | on a fresh deploy, grant `DEFAULT_ADMIN_ROLE` and `ORG_ROLE` to the deployer/`INITIAL_MINTER` via `initializeV2` |
 | `scripts/manage-org-role.js` | add | terminal script: grant/revoke `ORG_ROLE` for a wallet, run by the deployer (decision `2026-08-04-002`) |
-| `package.json` | modify | `org-role:local` / `org-role:sepolia` scripts |
+| `scripts/initializeV2.js` | add | one-time migration script for a proxy bootstrapped before ADR 0035 and since upgraded — calls `initializeV2` since `scripts/upgrade.js` only swaps bytecode (discovered running task 10 against Sepolia; decision `2026-08-05-009`) |
+| `package.json` | modify | `org-role:local` / `org-role:sepolia` / `initializeV2:local` / `initializeV2:sepolia` scripts |
 | `test/VinCidRegistry.roles.test.js` | add | role gating, migration, admin grant/revoke |
 | `test/VinCidRegistry.upgrade.test.js` | modify | storage-layout compatibility across the V2 upgrade |
 | `test/fixtures.js` | modify | fixture deploying the V2 shape with the deployer as admin |
@@ -45,7 +46,7 @@ Execute in order. Each task is small enough to implement and review independentl
 - [x] **7.** Add `scripts/manage-org-role.js`, following `scripts/upgrade.js`'s pattern: read the network's `deployments/<network>.json` artifact for the proxy address, use the deployer's Hardhat signer, read `TARGET_WALLET` (required — exit with a clear error if missing) and `ROLE_ACTION` (`grant` by default, or `revoke`) from the environment, call `grantRole(ORG_ROLE, TARGET_WALLET)` or `revokeRole(ORG_ROLE, TARGET_WALLET)`, wait for the transaction, and print the resulting `hasRole(ORG_ROLE, TARGET_WALLET)` to confirm. Scoped to `ORG_ROLE` only — `VERIFIER_ROLE` is unused (decision `2026-08-03-004`) and gets its own tooling later if activated. Add `org-role:local` / `org-role:sepolia` to `package.json`.
 - [x] **8.** Run `npm test` and `npm run test:report`; confirm the existing 4 suites still pass and that `docs/testing/automated-test-report.md` regenerates. *(40/40 passing, including the new roles and migration suites.)*
 - [x] **9.** Deploy to localhost end-to-end: fresh deploy, confirm the deployer holds `DEFAULT_ADMIN_ROLE` and `INITIAL_MINTER` holds `ORG_ROLE`, then run `TARGET_WALLET=<second wallet> npm run org-role:local` and confirm that wallet can mint while an ungranted third wallet cannot mint or update; run again with `ROLE_ACTION=revoke` and confirm the second wallet is locked out too. *(Verified 2026-08-04.)*
-- [ ] **10.** Deploy the upgrade to Sepolia with the existing `npm run upgrade:sepolia` flow (unchanged by this plan — the deployer signs directly, exactly as before). Verify post-upgrade that a VIN registered before the upgrade is still readable and that its CID can no longer be overwritten by a non-org wallet. **Blocked on user go-ahead** — a live, hard-to-reverse action against shared infrastructure (decision `2026-08-04-004`).
+- [x] **10.** Deploy the upgrade to Sepolia with the existing `npm run upgrade:sepolia` flow. *(Done 2026-08-05, with explicit user go-ahead — see decision `2026-08-05-009`. Proxy `0x9e30596A7C80754cd5149A465e89758CAdB0F8B3` upgraded to implementation `0xdB807873843ebAC47e2933822baedDac3b592140`; address unchanged. Discovered along the way: `scripts/upgrade.js` only swaps bytecode, it never calls `initializeV2` — since this proxy predates ADR 0035 entirely (bootstrapped 2026-07-30), roles were never bootstrapped, meaning `storeCid` would have reverted for every wallet, including the incumbent minter, until fixed. Wrote a new one-time migration script, `scripts/initializeV2.js` (+ `npm run initializeV2:sepolia`/`:local`), and ran it: deployer now holds `DEFAULT_ADMIN_ROLE`, incumbent minter now holds `ORG_ROLE`. Verified: both pre-upgrade VINs (`WBADT33383G473733`, `WBADT33383G400829`) still readable with their original CIDs; a freshly-generated non-org wallet's `storeCid.staticCall` on an existing VIN reverts with "Not an approved organization"; `submitApplication()` (ADR 0037) no longer reverts, confirmed via a live gas estimate against the deployed contract.)*
 - [x] **11.** On approval of this trio: move ADR 0030's plan trio to `docs/plans/rejected/`, per decision `2026-08-03-004`, and close issue #36 as not planned with a pointer to this ADR. *(Files moved; issue closure blocked on `gh` token permissions — see decision `2026-08-04-005`.)*
 
 ## Contract Surface

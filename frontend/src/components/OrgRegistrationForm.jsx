@@ -21,8 +21,10 @@ import {
   signChallenge,
   buildApplicationEmailBody,
   buildMailtoLink,
+  buildExplorerTxLink,
   MAILTO_LENGTH_WARNING_THRESHOLD,
 } from "../utils/org_application";
+import { submitApplicationReceipt } from "../utils/pinata_ipfs_nft_service";
 import { uiLog } from "../utils/logger";
 
 const APPLICATION_EMAIL = process.env.REACT_APP_ORG_APPLICATION_EMAIL || "";
@@ -39,12 +41,14 @@ const initialFields = {
 // prefilled email — no backend, no upload, no storage anywhere in this
 // system (decisions 2026-08-03-001, 2026-08-03-002). Approval itself happens
 // outside this app entirely: the deployer runs scripts/manage-org-role.js.
-export default function OrgRegistrationForm({ walletAddress, onBack }) {
+export default function OrgRegistrationForm({ walletAddress, chainId, onBack }) {
   const [fields, setFields] = useState({ ...initialFields, walletAddress: walletAddress || "" });
   const [errors, setErrors] = useState({});
   const [challenge, setChallenge] = useState("");
   const [signature, setSignature] = useState("");
   const [isSigning, setIsSigning] = useState(false);
+  const [txHash, setTxHash] = useState("");
+  const [isSubmittingTx, setIsSubmittingTx] = useState(false);
   const [copyStatus, setCopyStatus] = useState("");
 
   const isMountedRef = useRef(true);
@@ -55,16 +59,32 @@ export default function OrgRegistrationForm({ walletAddress, onBack }) {
     []
   );
 
+  // The "Sign challenge" button sits near the bottom of the visible area, so
+  // the Submit section (which only appears once both proofs — signature and
+  // txHash — are set) renders entirely below the fold with no scroll — the
+  // user sees the last status line and nothing else, and reports the submit
+  // button as missing. Scroll it into view once it appears. Keyed on txHash
+  // rather than signature: since ADR 0037, the Submit section only renders
+  // once txHash is also set, so scrolling on signature alone would fire
+  // before the section exists and do nothing.
+  const submitSectionRef = useRef(null);
+  useEffect(() => {
+    if (txHash && submitSectionRef.current) {
+      submitSectionRef.current.scrollIntoView({ behavior: "smooth", block: "start" });
+    }
+  }, [txHash]);
+
   // The wallet field defaults to whatever is connected, but only at mount —
   // useState's initializer doesn't re-run. Without this, switching accounts
   // in MetaMask while this page is open leaves the field pointing at the
-  // wallet that was connected when the page opened, and any signature
+  // wallet that was connected when the page opened, and any signature/receipt
   // already collected would be over the wrong address.
   useEffect(() => {
     if (!walletAddress) return;
     setFields((prev) => ({ ...prev, walletAddress }));
     setSignature("");
     setChallenge("");
+    setTxHash("");
   }, [walletAddress]);
 
   const setField = (name) => (event) => {
@@ -72,9 +92,14 @@ export default function OrgRegistrationForm({ walletAddress, onBack }) {
     setFields((prev) => ({ ...prev, [name]: value }));
     // Any edit after signing invalidates the signature — it was signed over
     // a specific legal name/timestamp, and the wallet may also have changed.
+    // The on-chain receipt is invalidated the same way: it's only meaningful
+    // as a proof paired with a specific, still-current application.
     if (signature) {
       setSignature("");
       setChallenge("");
+    }
+    if (txHash) {
+      setTxHash("");
     }
     setCopyStatus("");
     setErrors((prev) => (prev.general ? { ...prev, general: undefined } : prev));
@@ -134,7 +159,41 @@ export default function OrgRegistrationForm({ walletAddress, onBack }) {
     }
   };
 
-  const emailBody = signature
+  // ADR 0037: a second, distinct proof — a real mined transaction — required
+  // before the email step unlocks. Kept as its own explicit button (rather
+  // than firing automatically right after signing) so the applicant isn't
+  // surprised by a second wallet prompt, and understands this one costs gas
+  // unlike the free signature above.
+  const handleSubmitReceipt = async () => {
+    if (!walletAddress) {
+      setErrors((prev) => ({ ...prev, general: "Connect your wallet before submitting." }));
+      return;
+    }
+    setIsSubmittingTx(true);
+    setErrors((prev) => ({ ...prev, general: undefined }));
+    try {
+      const { txHash: hash } = await submitApplicationReceipt(walletAddress, chainId);
+      if (!isMountedRef.current) return;
+      setTxHash(hash);
+      uiLog.info("orgRegistration:receiptSubmitted", { walletAddress, chainId, txHash: hash });
+    } catch (error) {
+      uiLog.warn("orgRegistration:receipt_failed", { message: error.message });
+      if (!isMountedRef.current) return;
+      setErrors((prev) => ({
+        ...prev,
+        general:
+          error.code === 4001
+            ? "Transaction was rejected. A mined transaction is required as proof this wallet can actually transact on this network."
+            : /insufficient funds/i.test(error.message || "")
+            ? "This wallet doesn't have enough network gas to send the transaction — fund it with a small amount of ETH and try again."
+            : `Failed to submit on-chain receipt: ${error.message}`,
+      }));
+    } finally {
+      if (isMountedRef.current) setIsSubmittingTx(false);
+    }
+  };
+
+  const emailBody = signature && txHash
     ? buildApplicationEmailBody(
         {
           legalName: fields.legalName.trim(),
@@ -144,7 +203,8 @@ export default function OrgRegistrationForm({ walletAddress, onBack }) {
           walletAddress: fields.walletAddress.trim(),
         },
         challenge,
-        signature
+        signature,
+        txHash
       )
     : "";
   const bodyIsLong = emailBody.length > MAILTO_LENGTH_WARNING_THRESHOLD;
@@ -257,12 +317,48 @@ export default function OrgRegistrationForm({ walletAddress, onBack }) {
             </Stack>
           </Box>
 
+          {signature && (
+            <>
+              <Divider />
+              <Box>
+                <Typography variant="subtitle1" gutterBottom>
+                  3. On-chain Receipt
+                </Typography>
+                <Stack spacing={2}>
+                  <Typography variant="body2" color="text.secondary">
+                    This is a real transaction and costs a small amount of network gas — unlike
+                    the free signature above, it proves this wallet can actually transact on this
+                    network. Its transaction hash is included in your application email.
+                  </Typography>
+                  {!txHash && (
+                    <Button
+                      variant="outlined"
+                      onClick={handleSubmitReceipt}
+                      disabled={isSubmittingTx}
+                      startIcon={isSubmittingTx ? <CircularProgress size={20} /> : null}
+                    >
+                      {isSubmittingTx ? "Submitting..." : "Submit on-chain receipt"}
+                    </Button>
+                  )}
+                  {txHash && (
+                    <Typography variant="body2" color="success.main">
+                      On-chain receipt confirmed:{" "}
+                      <a href={buildExplorerTxLink(txHash)} target="_blank" rel="noreferrer">
+                        {txHash}
+                      </a>
+                    </Typography>
+                  )}
+                </Stack>
+              </Box>
+            </>
+          )}
+
           {errors.general && (
             <Typography color="error">{errors.general}</Typography>
           )}
 
-          {signature && (
-            <Box>
+          {signature && txHash && (
+            <Box ref={submitSectionRef}>
               <Typography variant="subtitle1" gutterBottom>
                 Submit
               </Typography>
@@ -304,5 +400,6 @@ export default function OrgRegistrationForm({ walletAddress, onBack }) {
 
 OrgRegistrationForm.propTypes = {
   walletAddress: PropTypes.string,
+  chainId: PropTypes.oneOfType([PropTypes.string, PropTypes.number]),
   onBack: PropTypes.func.isRequired,
 };

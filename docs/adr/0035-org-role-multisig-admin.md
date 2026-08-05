@@ -1,12 +1,12 @@
 # ADR 0035: Replace the single `minter` with an `ORG_ROLE`, administered by the contract deployer, with email-based org onboarding
 
-- **Status:** proposed
+- **Status:** accepted
 - **Date:** 2026-08-03 (admin model revised 2026-08-04)
 - **Scope:** both
 - **Related plans:**
-  - `docs/plans/in-progress/0035-org-role-multisig-admin-frontend.md`
-  - `docs/plans/in-progress/0035-org-role-multisig-admin-contracts.md`
-- **Related decisions:** `docs/decisions/2026-08-03-001-org-application-intake-by-email.md`, `docs/decisions/2026-08-03-002-kyb-documents-stay-off-chain.md`, `docs/decisions/2026-08-03-003-two-of-three-safe-as-admin.md` (superseded), `docs/decisions/2026-08-03-004-merge-adr-0030-access-control-into-0035.md`, `docs/decisions/2026-08-03-005-defer-token-economy-to-adr-0036.md`, `docs/decisions/2026-08-04-001-deployer-eoa-replaces-safe-as-admin.md`, `docs/decisions/2026-08-04-002-terminal-role-script-and-event-based-org-list.md`
+  - `docs/plans/done/0035-org-role-multisig-admin-frontend.md`
+  - `docs/plans/done/0035-org-role-multisig-admin-contracts.md`
+- **Related decisions:** `docs/decisions/2026-08-03-001-org-application-intake-by-email.md`, `docs/decisions/2026-08-03-002-kyb-documents-stay-off-chain.md`, `docs/decisions/2026-08-03-003-two-of-three-safe-as-admin.md` (superseded), `docs/decisions/2026-08-03-004-merge-adr-0030-access-control-into-0035.md`, `docs/decisions/2026-08-03-005-defer-token-economy-to-adr-0036.md`, `docs/decisions/2026-08-04-001-deployer-eoa-replaces-safe-as-admin.md`, `docs/decisions/2026-08-04-002-terminal-role-script-and-event-based-org-list.md`, `docs/decisions/2026-08-05-009-sepolia-upgrade-and-initializeV2-gap.md`, `docs/decisions/2026-08-05-010-plan-0035-in-progress-to-done.md`
 
 ## Context
 

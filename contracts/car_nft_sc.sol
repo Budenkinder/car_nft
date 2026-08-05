@@ -53,6 +53,7 @@ contract VinCidRegistry is
 
     event CidStored(string vin, string cid, uint256 tokenId);
     event TokensWithdrawn(address indexed token, address indexed to, uint256 amount);
+    event ApplicationSubmitted(address indexed applicant, uint256 timestamp);
 
     /// @custom:oz-upgrades-unsafe-allow constructor
     constructor() {
@@ -122,6 +123,18 @@ contract VinCidRegistry is
         if (isNewMint) {
             _payReward(recipient);
         }
+    }
+
+    /// @notice ADR 0037. Callable by any wallet, including one with no role —
+    ///         an org-registration applicant has none yet. Emits only the
+    ///         caller's address and the block timestamp; no application
+    ///         content or hash of it is ever accepted or stored (decision
+    ///         2026-08-03-002). Gives the applicant a real, mined transaction
+    ///         to reference in their application email as a stronger proof
+    ///         than `personal_sign` alone: it shows the wallet can actually
+    ///         transact on this network, not just sign a message.
+    function submitApplication() external {
+        emit ApplicationSubmitted(msg.sender, block.timestamp);
     }
 
     /// @notice Withdraw tokens held by the registry. Use this to recover funds

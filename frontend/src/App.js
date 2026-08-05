@@ -291,6 +291,7 @@ function App() {
       {view === "register" ? (
         <OrgRegistrationForm
           walletAddress={walletAddress}
+          chainId={chainId}
           onBack={() => setView("registry")}
         />
       ) : (

@@ -12,7 +12,9 @@
     "upgrade:local": "hardhat run scripts/upgrade.js --network localhost",
     "upgrade:sepolia": "hardhat run scripts/upgrade.js --network sepolia",
     "org-role:local": "hardhat run scripts/manage-org-role.js --network localhost",
-    "org-role:sepolia": "hardhat run scripts/manage-org-role.js --network sepolia"
+    "org-role:sepolia": "hardhat run scripts/manage-org-role.js --network sepolia",
+    "initializeV2:local": "hardhat run scripts/initializeV2.js --network localhost",
+    "initializeV2:sepolia": "hardhat run scripts/initializeV2.js --network sepolia"
   },
   "repository": {
     "type": "git",
